@@ -7,9 +7,18 @@ import pandas as pd
 
 import time
 
+# testovaci data
+# test_file = "walking normal_Raw.csv"
+# df = pd.read_csv(test_file)
+#
+# acc = np.array([df['AccX_LeftFoot'],df['AccY_LeftFoot'],df['AccZ_LeftFoot']]).T
+# gyro = np.array([df['GyroX_LeftFoot'],df['GyroY_LeftFoot'],df['GyroZ_LeftFoot']]).T
+# mag = np.array([df['MagX_LeftFoot'],df['MagY_LeftFoot'],df['MagZ_LeftFoot']]).T
+# rate = 250
+
+
+#mat data pro hydronaut
 file  = "2024-09-25T14-00.mat"
-
-
 mat = loadmat(file)
 EMG = mat["EMG"][0][0]
 
@@ -46,7 +55,8 @@ for q in qOut:
     q0, q1, q2, q3 = q
 
     roll = math.atan2(2 * (q0 * q1 + q2 * q3), 1 - 2 * (q1**2 + q2**2))
-    pitch = 2 * math.atan2(math.sqrt(1+ 2 *(q0*q2-q1*q3)),math.sqrt(1-2*(q0*q2-q1*q3))) - math.pi/2
+    pitch = math.asin(2 * (q0 * q2 - q3 * q1))
+    # pitch = 2 * math.atan2(math.sqrt(1+ 2 *(q0*q2-q1*q3)),math.sqrt(1-2*(q0*q2-q1*q3))) - math.pi/2 #dava stejne vysledky
     yaw = math.atan2(2 * (q0 * q3 + q1 * q2), 1 - 2 * (q2**2 + q3**2))
 
     roll_list.append(math.degrees(roll))

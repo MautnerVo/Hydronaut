@@ -106,10 +106,6 @@ roll_list = []
 pitch_list = []
 yaw_list = []
 
-roll = 0
-pitch = 0
-yaw = 0
-
 
 for q in qOut:
     q0, q1, q2, q3 = np.array([q.x, q.y, q.z, q.w])
