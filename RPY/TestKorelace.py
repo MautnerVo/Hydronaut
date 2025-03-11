@@ -1,8 +1,8 @@
 import pandas as pd
 from scipy.stats import pearsonr
 import numpy as np
-kalman = pd.read_csv("orientace_Kalman.csv")
-komplementarni = pd.read_csv("orientace_Komplementarni.csv")
+kalman = pd.read_csv("../orientace_Kalman.csv")
+komplementarni = pd.read_csv("../orientace_Komplementarni.csv")
 
 
 def normalize(signal):

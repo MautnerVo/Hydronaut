@@ -1,10 +1,7 @@
-from scipy.io import loadmat
 import calculations
 import plot_euler as peu
 from skinematics import imus
 import numpy as np
-import math
-import matplotlib.pyplot as plt
 import pandas as pd
 import time
 
@@ -71,7 +68,7 @@ for q, k in zip(qOut, kOut):
     yaw_list.append(yaw)
 
 for m in mat:
-    mroll,mpitch,myaw = calculations.rpy_matrix(m[0][0],m[1][0],m[2][0],m[2][1],m[2][2])
+    mroll,mpitch,myaw = calculations.rpy_matrix(m[0][0], m[1][0], m[2][0], m[2][1], m[2][2])
     mroll_list.append(mroll)
     mpitch_list.append(mpitch)
     myaw_list.append(myaw)
