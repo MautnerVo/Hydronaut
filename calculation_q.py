@@ -29,7 +29,7 @@ data = np.array([roll_list, pitch_list, yaw_list]).T
 
 df = pd.DataFrame(data)
 df.columns = ["Roll", "Pitch", "Yaw"]
-df.to_csv("orientace_kalman.csv",index=False)
+df.to_csv("orientace_komplementarni.csv",index=False)
 
 plt.subplot(3,1,1)
 plt.title("Roll")
