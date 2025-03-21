@@ -3,6 +3,7 @@ from PyQt5 import QtWidgets, uic
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
+import pandas as pd
 
 class MatplotlibWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
@@ -21,17 +22,15 @@ class MatplotlibWidget(QtWidgets.QWidget):
 
         self.layout.setContentsMargins(0, 0, 0, 0)
 
-        self.plot()
 
-    def plot(self):
+    def plot(self,data):
         ax = self.figure.add_subplot(111)
-        x = np.linspace(0, 10, 100)
-        y = np.sin(x)
-        ax.plot(x, y)
+        ax.plot(data[:1000])
 
-        ax.set_yticks([])
+        ax.set_xticks([])
+        # ax.set_yticks([])
 
-        self.figure.tight_layout(pad=0.0)  # Adjust padding to remove excess space
+        self.figure.tight_layout(pad=0.0)
         self.canvas.draw()
 
     def resizeEvent(self, event):
@@ -47,10 +46,13 @@ class Ui(QtWidgets.QMainWindow):
         self.widget_2 = self.findChild(QtWidgets.QWidget, 'widget_2')
         self.widget = self.findChild(QtWidgets.QWidget, 'widget')
 
-        self.embed_matplotlib(self.widget_2)
-        self.embed_matplotlib(self.widget)
+        self.pltWidget = self.embed_matplotlib(self.widget_2)
+        self.pltWidget1 = self.embed_matplotlib(self.widget)
 
         self.show()
+
+        self.loadata()
+
 
     def embed_matplotlib(self, target_widget):
         matplotlib_widget = MatplotlibWidget()
@@ -64,7 +66,11 @@ class Ui(QtWidgets.QMainWindow):
         target_layout.setContentsMargins(0, 0, 0, 0)
 
         target_widget.setLayout(target_layout)
+        return matplotlib_widget
 
+    def loadata(self):
+        self.df = pd.read_csv("1_EMG_521_0420_00133.csv")
+        self.pltWidget.plot(self.df)
 
 app = QtWidgets.QApplication(sys.argv)
 window = Ui()
