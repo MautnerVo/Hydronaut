@@ -72,7 +72,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Safe offset</string>
+           <string>Save offset</string>
           </property>
          </widget>
         </item>
