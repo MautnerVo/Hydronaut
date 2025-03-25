@@ -55,7 +55,7 @@ class Ui(QtWidgets.QMainWindow):
         self.horizontalScrollBar = self.findChild(QtWidgets.QScrollBar, 'horizontalScrollBar_2')
         self.horizontalScrollBar_1 = self.findChild(QtWidgets.QScrollBar, 'horizontalScrollBar_3')
 
-        self.pb_safe_offset = self.findChild(QtWidgets.QPushButton, 'pb_safe_offset')
+        self.pb_save_offset = self.findChild(QtWidgets.QPushButton, 'pb_safe_offset')
         self.pb_load_offset = self.findChild(QtWidgets.QPushButton, 'pb_load_offset')
         self.pb_file_load = self.findChild(QtWidgets.QPushButton, 'pb_file_load')
 
@@ -65,6 +65,7 @@ class Ui(QtWidgets.QMainWindow):
         self.horizontalScrollBar.valueChanged.connect(self.Update_Plot_1)
 
         self.pb_file_load.clicked.connect(self.load_csv_files)
+        self.pb_save_offset.clicked.connect(self.Save_file)
         self.horizontalScrollBar.valueChanged.connect(self.Update_Plot_1)
         self.horizontalScrollBar_1.valueChanged.connect(self.Update_Plots)
 
@@ -83,7 +84,6 @@ class Ui(QtWidgets.QMainWindow):
                 if self.files[0].endswith(".csv") and self.files[1].endswith(".txt"):
                     self.df = pd.read_csv(self.files[0],delimiter="\t")
                     self.df1 = pd.read_csv(self.files[1],delimiter="\t",skiprows=4)
-                    print(self.df1)
                     self.load_data()
                 if self.files[0].endswith(".txt") and self.files[1].endswith(".csv"):
                     self.df1 = pd.read_csv(self.files[1],delimiter="\t",skiprows=4)
@@ -134,6 +134,15 @@ class Ui(QtWidgets.QMainWindow):
     def Update_Plots(self):
         self.Update_Plot_1()
         self.Update_Plot_2()
+
+    def Save_file(self):
+        value = self.horizontalScrollBar.value()
+        try:
+            df_copy = self.df.iloc[value:].copy()
+            df_copy.columns = ["Value"]
+            df_copy.to_csv("output.csv", index=True, index_label="Index", sep="\t")
+        except Exception as e:
+            print("Chyba při ukládání souboru:", e)
 
 app = QtWidgets.QApplication(sys.argv)
 window = Ui()
