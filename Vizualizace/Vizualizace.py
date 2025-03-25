@@ -1,8 +1,10 @@
 import sys
 from PyQt5 import QtWidgets, uic
+from PyQt5.QtWidgets import QFileDialog
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
+import os
 import pandas as pd
 
 class MatplotlibWidget(QtWidgets.QWidget):
@@ -62,14 +64,35 @@ class Ui(QtWidgets.QMainWindow):
 
         self.horizontalScrollBar.valueChanged.connect(self.Update_Plot_1)
 
-        self.pb_file_load.clicked.connect(self.load_data)
+        self.pb_file_load.clicked.connect(self.load_csv_files)
         self.horizontalScrollBar.valueChanged.connect(self.Update_Plot_1)
         self.horizontalScrollBar_1.valueChanged.connect(self.Update_Plots)
 
         self.df = None
-
+        self.files= []
         self.show()
 
+    def load_csv_files(self):
+        try:
+            file_path, _ = QFileDialog.getOpenFileName(
+                self, "Select CSV or TXT File", "", "CSV and TXT Files (*.csv *.txt);;All Files (*)"
+            )
+            file_path = os.path.abspath(file_path)
+            self.files.append(file_path)
+            if len(self.files) == 2:
+                if self.files[0].endswith(".csv") and self.files[1].endswith(".txt"):
+                    self.df = pd.read_csv(self.files[0],delimiter="\t")
+                    self.df1 = pd.read_csv(self.files[1],delimiter="\t",skiprows=4)
+                    print(self.df1)
+                    self.load_data()
+                if self.files[0].endswith(".txt") and self.files[1].endswith(".csv"):
+                    self.df1 = pd.read_csv(self.files[1],delimiter="\t",skiprows=4)
+                    self.df = pd.read_csv(self.files[0],delimiter="\t")
+                    self.load_data()
+
+
+        except Exception as e:
+            print(e)
     def embed_matplotlib(self, target_widget):
         matplotlib_widget = MatplotlibWidget()
 
@@ -83,30 +106,19 @@ class Ui(QtWidgets.QMainWindow):
         return matplotlib_widget
 
     def load_data(self):
-        try:
-            self.df1 = pd.read_csv("MT_00130934_003-000.csv", sep="\t", engine="c")
-            self.df = pd.read_csv("1_EMG_521_0420_00133.csv")
-
-            if self.df.empty:
-                print("Error: Loaded CSV is empty!")
-                return
-
-            self.horizontalScrollBar.setRange(0, len(self.df) - 1000)
+            self.horizontalScrollBar.setRange(0, int((len(self.df) - 1000)/2))
             self.horizontalScrollBar.setSingleStep(1)
             self.horizontalScrollBar_1.setRange(0, len(self.df1) - 1000)
             self.horizontalScrollBar_1.setSingleStep(1)
             self.Update_Plots()
             print(self.horizontalScrollBar.minimum(), self.horizontalScrollBar_1.maximum())
 
-        except Exception as e:
-            print(f"Error loading data: {e}")
-
     def Update_Plot_1(self):
         if self.df is None or self.df.empty:
             print("No data loaded!")
             return
 
-        data = self.df.iloc[:, 0].values
+        data = self.df.iloc[:, 0].values[::2]
         value = self.horizontalScrollBar.value()
         offset=self.horizontalScrollBar_1.value()
         print(value,offset)
