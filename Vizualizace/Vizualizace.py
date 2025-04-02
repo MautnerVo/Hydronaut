@@ -85,14 +85,19 @@ class Ui(QtWidgets.QMainWindow):
                     self.df = pd.read_csv(self.files[0],delimiter="\t")
                     self.df1 = pd.read_csv(self.files[1],delimiter="\t",skiprows=4)
                     self.load_data()
-                if self.files[0].endswith(".txt") and self.files[1].endswith(".csv"):
-                    self.df1 = pd.read_csv(self.files[1],delimiter="\t",skiprows=4)
-                    self.df = pd.read_csv(self.files[0],delimiter="\t")
+                elif self.files[0].endswith(".txt") and self.files[1].endswith(".csv"):
+
+                    self.df1 = pd.read_csv(self.files[0],delimiter="\t",skiprows=4)
+                    self.df = pd.read_csv(self.files[1],delimiter="\t")
                     self.load_data()
 
+            if len(self.files) > 2:
+                self.files.pop(0)
+                self.files.pop(0)
 
         except Exception as e:
             print(e)
+
     def embed_matplotlib(self, target_widget):
         matplotlib_widget = MatplotlibWidget()
 
@@ -111,7 +116,7 @@ class Ui(QtWidgets.QMainWindow):
             self.horizontalScrollBar_1.setRange(0, len(self.df1) - 1000)
             self.horizontalScrollBar_1.setSingleStep(1)
             self.Update_Plots()
-            print(self.horizontalScrollBar.minimum(), self.horizontalScrollBar_1.maximum())
+            # print(self.horizontalScrollBar.minimum(), self.horizontalScrollBar_1.maximum())
 
     def Update_Plot_1(self):
         if self.df is None or self.df.empty:
