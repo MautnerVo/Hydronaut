@@ -57,46 +57,80 @@ class Ui(QtWidgets.QMainWindow):
 
         self.pb_save_offset = self.findChild(QtWidgets.QPushButton, 'pb_safe_offset')
         self.pb_load_offset = self.findChild(QtWidgets.QPushButton, 'pb_load_offset')
-        self.pb_file_load = self.findChild(QtWidgets.QPushButton, 'pb_file_load')
+        self.pb_load_IMU = self.findChild(QtWidgets.QPushButton, 'pb_load_IMU')
+        self.pb_load_EMG = self.findChild(QtWidgets.QPushButton, 'pb_load_EMG')
 
         self.pltWidget = self.embed_matplotlib(self.widget_2)
         self.pltWidget1 = self.embed_matplotlib(self.widget)
 
         self.horizontalScrollBar.valueChanged.connect(self.Update_Plot_1)
+        self.pb_load_EMG.clicked.connect(self.load_emg)
+        self.pb_load_IMU.clicked.connect(self.load_imu)
 
-        self.pb_file_load.clicked.connect(self.load_csv_files)
         self.pb_save_offset.clicked.connect(self.Save_file)
         self.horizontalScrollBar.valueChanged.connect(self.Update_Plot_1)
         self.horizontalScrollBar_1.valueChanged.connect(self.Update_Plots)
 
         self.df = None
-        self.files= []
+        self.df1 = None
+        self.IMU = None
+        self.EMG = None
         self.show()
 
-    def load_csv_files(self):
-        try:
+    def load_imu(self):
+            self.pb_load_IMU.setStyleSheet("color: rgb(0, 0, 255);")
             file_path, _ = QFileDialog.getOpenFileName(
-                self, "Select CSV or TXT File", "", "CSV and TXT Files (*.csv *.txt);;All Files (*)"
+                self, "Select IMU TXT File", "", "TXT Files *.txt;;All Files (*)"
             )
-            file_path = os.path.abspath(file_path)
-            self.files.append(file_path)
-            if len(self.files) == 2:
-                if self.files[0].endswith(".csv") and self.files[1].endswith(".txt"):
-                    self.df = pd.read_csv(self.files[0],delimiter="\t")
-                    self.df1 = pd.read_csv(self.files[1],delimiter="\t",skiprows=4)
-                    self.load_data()
-                elif self.files[0].endswith(".txt") and self.files[1].endswith(".csv"):
 
-                    self.df1 = pd.read_csv(self.files[0],delimiter="\t",skiprows=4)
-                    self.df = pd.read_csv(self.files[1],delimiter="\t")
-                    self.load_data()
+            if file_path != "":
+                self.df1 = pd.read_csv(file_path, delimiter="\t", skiprows=4)
+                self.pb_load_IMU.setStyleSheet("color: rgb(0, 255, 0);")
+                self.horizontalScrollBar_1.setRange(0, len(self.df1) - 1000)
+                self.horizontalScrollBar_1.setSingleStep(1)
+                self.Update_Plot_2()
+            if self.df is None:
+                self.pb_load_IMU.setStyleSheet("color: rgb(255, 0, 0);")
 
-            if len(self.files) > 2:
-                self.files.pop(0)
-                self.files.pop(0)
+    def load_emg(self):
+            self.pb_load_EMG.setStyleSheet("color: rgb(0, 0, 255);")
+            file_path, _ = QFileDialog.getOpenFileName(
+                self, "Select EMG TXT File", "", "TXT Files *.txt;;All Files (*)"
+            )
+            if file_path != "":
+                self.df = pd.read_csv(file_path,delimiter="\t",encoding = "utf-8",encoding_errors="ignore")
+                self.pb_load_EMG.setStyleSheet("color: rgb(0, 255, 0);")
+                self.horizontalScrollBar.setRange(0, int((len(self.df) - 1000) / 2))
+                self.horizontalScrollBar.setSingleStep(1)
+                self.Update_Plot_1()
+            if self.df is None:
+                self.pb_load_EMG.setStyleSheet("color: rgb(255, 0, 0);")
 
-        except Exception as e:
-            print(e)
+
+    # def load_csv_files(self):
+    #     try:
+    #         file_path, _ = QFileDialog.getOpenFileName(
+    #             self, "Select CSV or TXT File", "", "CSV and TXT Files (*.csv *.txt);;All Files (*)"
+    #         )
+    #         file_path = os.path.abspath(file_path)
+    #         self.files.append(file_path)
+    #         if len(self.files) == 2:
+    #             if self.files[0].endswith(".csv") and self.files[1].endswith(".txt"):
+    #                 self.df = pd.read_csv(self.files[0],delimiter="\t")
+    #                 self.df1 = pd.read_csv(self.files[1],delimiter="\t",skiprows=4)
+    #                 self.load_data()
+    #             elif self.files[0].endswith(".txt") and self.files[1].endswith(".csv"):
+    #
+    #                 self.df1 = pd.read_csv(self.files[0],delimiter="\t",skiprows=4)
+    #                 self.df = pd.read_csv(self.files[1],delimiter="\t")
+    #                 self.load_data()
+    #
+    #         if len(self.files) > 2:
+    #             self.files.pop(0)
+    #             self.files.pop(0)
+    #
+    #     except Exception as e:
+    #         print(e)
 
     def embed_matplotlib(self, target_widget):
         matplotlib_widget = MatplotlibWidget()
@@ -110,23 +144,11 @@ class Ui(QtWidgets.QMainWindow):
         target_widget.setLayout(target_layout)
         return matplotlib_widget
 
-    def load_data(self):
-            self.horizontalScrollBar.setRange(0, int((len(self.df) - 1000)/2))
-            self.horizontalScrollBar.setSingleStep(1)
-            self.horizontalScrollBar_1.setRange(0, len(self.df1) - 1000)
-            self.horizontalScrollBar_1.setSingleStep(1)
-            self.Update_Plots()
-            # print(self.horizontalScrollBar.minimum(), self.horizontalScrollBar_1.maximum())
 
     def Update_Plot_1(self):
-        if self.df is None or self.df.empty:
-            print("No data loaded!")
-            return
-
-        data = self.df.iloc[:, 0].values[::2]
+        data = self.df.iloc[:, 1].values[::2]
         value = self.horizontalScrollBar.value()
         offset=self.horizontalScrollBar_1.value()
-        print(value,offset)
         self.pltWidget.plot(data=data,min=value+offset,max=value+1000+offset)
 
     def Update_Plot_2(self):
@@ -143,7 +165,7 @@ class Ui(QtWidgets.QMainWindow):
     def Save_file(self):
         value = self.horizontalScrollBar.value()
         try:
-            df_copy = self.df.iloc[value:].copy()
+            df_copy = self.df.iloc[value:,1].copy()
             df_copy.columns = ["Value"]
             df_copy.to_csv("output.csv", index=True, index_label="Index", sep="\t")
         except Exception as e:
