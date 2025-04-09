@@ -1,4 +1,6 @@
 import sys
+from fileinput import filename
+
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtWidgets import QFileDialog
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -55,10 +57,12 @@ class Ui(QtWidgets.QMainWindow):
         self.horizontalScrollBar = self.findChild(QtWidgets.QScrollBar, 'horizontalScrollBar_2')
         self.horizontalScrollBar_1 = self.findChild(QtWidgets.QScrollBar, 'horizontalScrollBar_3')
 
-        self.pb_save_offset = self.findChild(QtWidgets.QPushButton, 'pb_safe_offset')
-        self.pb_load_offset = self.findChild(QtWidgets.QPushButton, 'pb_load_offset')
+        self.pb_export = self.findChild(QtWidgets.QPushButton, 'pb_export')
         self.pb_load_IMU = self.findChild(QtWidgets.QPushButton, 'pb_load_IMU')
         self.pb_load_EMG = self.findChild(QtWidgets.QPushButton, 'pb_load_EMG')
+
+        self.sb_set_offset = self.findChild(QtWidgets.QSpinBox, 'sb_set_offset')
+        self.sb_set_pos = self.findChild(QtWidgets.QSpinBox, 'sb_set_pos')
 
         self.pltWidget = self.embed_matplotlib(self.widget_2)
         self.pltWidget1 = self.embed_matplotlib(self.widget)
@@ -67,72 +71,91 @@ class Ui(QtWidgets.QMainWindow):
         self.pb_load_EMG.clicked.connect(self.load_emg)
         self.pb_load_IMU.clicked.connect(self.load_imu)
 
-        self.pb_save_offset.clicked.connect(self.Save_file)
+        self.pb_export.clicked.connect(self.Save_file)
         self.horizontalScrollBar.valueChanged.connect(self.Update_Plot_1)
         self.horizontalScrollBar_1.valueChanged.connect(self.Update_Plots)
 
-        self.df = None
-        self.df1 = None
+        self.df_emg = None
+        self.df_imu = None
         self.IMU = None
         self.EMG = None
         self.show()
 
     def load_imu(self):
             self.pb_load_IMU.setStyleSheet("color: rgb(0, 0, 255);")
-            file_path, _ = QFileDialog.getOpenFileName(
-                self, "Select IMU TXT File", "", "TXT Files *.txt;;All Files (*)"
+            folder_path = QFileDialog.getExistingDirectory(
+                self,
+                "Select IMU Folder",
+                "",
+                QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks
             )
 
-            if file_path != "":
-                self.df1 = pd.read_csv(file_path, delimiter="\t", skiprows=4)
-                self.pb_load_IMU.setStyleSheet("color: rgb(0, 255, 0);")
-                self.horizontalScrollBar_1.setRange(0, len(self.df1) - 1000)
-                self.horizontalScrollBar_1.setSingleStep(1)
-                self.Update_Plot_2()
-            if self.df is None:
+            if folder_path != "":
+                self.df_imu = [pd.DataFrame(),pd.DataFrame(),pd.DataFrame(),pd.DataFrame()]
+                for file in os.listdir(folder_path):
+                    file_path = os.path.join(folder_path, file).replace("\\", "/")
+                    if os.path.isfile(file_path):
+                        print("Processing file:", file)
+                        try:
+                            if self.df_imu[0].empty and file.startswith("b"):
+                                self.df_imu[0] = pd.read_csv(file_path, delimiter="\t", skiprows=4)
+                            elif self.df_imu[1].empty and file.startswith("t"):
+                                self.df_imu[1] = pd.read_csv(file_path, delimiter="\t", skiprows=4)
+                            elif self.df_imu[2].empty and file.startswith("r"):
+                                self.df_imu[2] = pd.read_csv(file_path, delimiter="\t", skiprows=4)
+                            elif self.df_imu[3].empty and file.startswith("g"):
+                                self.df_imu[3] = pd.read_csv(file_path, delimiter="\t", skiprows=4)
+                        except Exception as e:
+                            print(f"Error reading file {file_path}: {e}")
+
+                if not self.df_imu[0].empty and not self.df_imu[1].empty and not self.df_imu[2].empty and not self.df_imu[3].empty:
+                    self.pb_load_IMU.setStyleSheet("color: rgb(0, 255, 0);")
+                    self.horizontalScrollBar_1.setRange(0, len(self.df_imu[0]) - 1000)
+                    self.horizontalScrollBar_1.setSingleStep(1)
+                    self.Update_Plot_2()
+                else:
+                    self.pb_load_IMU.setStyleSheet("color: rgb(255, 0, 0);")
+            if self.df_imu is None:
                 self.pb_load_IMU.setStyleSheet("color: rgb(255, 0, 0);")
 
     def load_emg(self):
             self.pb_load_EMG.setStyleSheet("color: rgb(0, 0, 255);")
-            file_path, _ = QFileDialog.getOpenFileName(
-                self, "Select EMG TXT File", "", "TXT Files *.txt;;All Files (*)"
+            folder_path = QFileDialog.getExistingDirectory(
+                self,
+                "Select EMG Folder",
+                "",
+                QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks
             )
-            if file_path != "":
-                self.df = pd.read_csv(file_path,delimiter="\t",encoding = "utf-8",encoding_errors="ignore")
-                self.pb_load_EMG.setStyleSheet("color: rgb(0, 255, 0);")
-                self.horizontalScrollBar.setRange(0, int((len(self.df) - 1000) / 2))
-                self.horizontalScrollBar.setSingleStep(1)
-                self.Update_Plot_1()
-            if self.df is None:
+            if folder_path != "":
+                self.df_emg = [pd.DataFrame(),pd.DataFrame(),pd.DataFrame(),pd.DataFrame()]
+                for path in os.listdir(folder_path):
+                    file_path = os.path.join(folder_path, path).replace("\\", "/")
+                    if os.path.isfile(file_path):
+                        print("Processing file:", path)
+                        try:
+                            if self.df_emg[0].empty and path.startswith("b"):
+                                self.df_emg[0] = pd.read_csv(file_path, delimiter="\t")
+                            elif self.df_emg[1].empty and path.startswith("t"):
+                                self.df_emg[1] = pd.read_csv(file_path, delimiter="\t")
+                            elif self.df_emg[2].empty and path.startswith("r"):
+                                self.df_emg[2] = pd.read_csv(file_path, delimiter="\t")
+                            elif self.df_emg[3].empty and path.startswith("g"):
+                                self.df_emg[3] = pd.read_csv(file_path, delimiter="\t")
+                        except Exception as e:
+                            print(f"Error reading file {file_path}: {e}")
+
+                if not self.df_emg[0].empty and not self.df_emg[1].empty and not self.df_emg[2].empty and not self.df_emg[3].empty:
+                    self.pb_load_EMG.setStyleSheet("color: rgb(0, 255, 0);")
+                    self.horizontalScrollBar.setRange(0, int((len(self.df_emg[0]) - 1000) / 2))
+                    self.horizontalScrollBar.setSingleStep(1)
+                    self.Update_Plot_1()
+                else:
+                    self.pb_load_EMG.setStyleSheet("color: rgb(255, 0, 0);")
+            if self.df_emg is None:
                 self.pb_load_EMG.setStyleSheet("color: rgb(255, 0, 0);")
 
-
-    # def load_csv_files(self):
-    #     try:
-    #         file_path, _ = QFileDialog.getOpenFileName(
-    #             self, "Select CSV or TXT File", "", "CSV and TXT Files (*.csv *.txt);;All Files (*)"
-    #         )
-    #         file_path = os.path.abspath(file_path)
-    #         self.files.append(file_path)
-    #         if len(self.files) == 2:
-    #             if self.files[0].endswith(".csv") and self.files[1].endswith(".txt"):
-    #                 self.df = pd.read_csv(self.files[0],delimiter="\t")
-    #                 self.df1 = pd.read_csv(self.files[1],delimiter="\t",skiprows=4)
-    #                 self.load_data()
-    #             elif self.files[0].endswith(".txt") and self.files[1].endswith(".csv"):
-    #
-    #                 self.df1 = pd.read_csv(self.files[0],delimiter="\t",skiprows=4)
-    #                 self.df = pd.read_csv(self.files[1],delimiter="\t")
-    #                 self.load_data()
-    #
-    #         if len(self.files) > 2:
-    #             self.files.pop(0)
-    #             self.files.pop(0)
-    #
-    #     except Exception as e:
-    #         print(e)
-
-    def embed_matplotlib(self, target_widget):
+    @staticmethod
+    def embed_matplotlib(target_widget):
         matplotlib_widget = MatplotlibWidget()
 
         target_layout = QtWidgets.QVBoxLayout(target_widget)
@@ -146,15 +169,15 @@ class Ui(QtWidgets.QMainWindow):
 
 
     def Update_Plot_1(self):
-        data = self.df.iloc[:, 1].values[::2]
+        data = self.df_emg[0].iloc[:, 1].values[::2]
         value = self.horizontalScrollBar.value()
         offset=self.horizontalScrollBar_1.value()
         self.pltWidget.plot(data=data,min=value+offset,max=value+1000+offset)
 
     def Update_Plot_2(self):
-        data = self.df1.iloc[:,0].values
-        data1 = self.df1.iloc[:,1].values
-        data2 = self.df1.iloc[:,2].values
+        data = self.df_imu[0].iloc[:,0].values
+        data1 = self.df_imu[0].iloc[:,1].values
+        data2 = self.df_imu[0].iloc[:,2].values
         value = self.horizontalScrollBar_1.value()
         self.pltWidget1.plot(data=data,data1=data1,data2=data2,min=value,max=value+1000)
 
@@ -164,12 +187,12 @@ class Ui(QtWidgets.QMainWindow):
 
     def Save_file(self):
         value = self.horizontalScrollBar.value()
-        try:
-            df_copy = self.df.iloc[value:,1].copy()
-            df_copy.columns = ["Value"]
-            df_copy.to_csv("output.csv", index=True, index_label="Index", sep="\t")
-        except Exception as e:
-            print("Chyba při ukládání souboru:", e)
+        df_copy = self.df_emg.iloc[value:,1].copy()
+        df_copy.columns = ["Value"]
+        filepath, _ = QFileDialog.getSaveFileName(
+                self, "Save file", "", "All Files (*);; Text Files (*.txt)"
+            )
+        df_copy.to_csv(filepath, index=True, index_label="Index", sep="\t")
 
 app = QtWidgets.QApplication(sys.argv)
 window = Ui()
