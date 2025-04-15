@@ -1,6 +1,4 @@
 import sys
-from fileinput import filename
-
 from PyQt5 import QtWidgets, uic
 from PyQt5.QtWidgets import QFileDialog
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -186,13 +184,46 @@ class Ui(QtWidgets.QMainWindow):
         self.Update_Plot_2()
 
     def Save_file(self):
-        value = self.horizontalScrollBar.value()
-        df_copy = self.df_emg.iloc[value:,1].copy()
-        df_copy.columns = ["Value"]
-        filepath, _ = QFileDialog.getSaveFileName(
-                self, "Save file", "", "All Files (*);; Text Files (*.txt)"
-            )
-        df_copy.to_csv(filepath, index=True, index_label="Index", sep="\t")
+        # value = self.horizontalScrollBar.value()
+        try:
+            out = [
+                [x / 200 for x in range(len(self.df_emg[0]))],
+                self.df_emg[0],
+                self.Adjust_rate(self.df_imu[0]["Mat[0][0]"],len(self.df[0])),
+                self.Adjust_rate(self.df_imu[0]["Mat[1][0]"],len(self.df[0])),
+                self.Adjust_rate(self.df_imu[0]["Mat[2][0]"],len(self.df[0])),
+                self.Adjust_rate(self.df_imu[0]["Mat[2][1]"],len(self.df[0])),
+                self.Adjust_rate(self.df_imu[0]["Mat[2][2]"],len(self.df[0])),
+            ]
+            out = np.array(out)
+            print(out.shape)
+            print(self.df_emg[0].shape)
+
+            # out_df = pd.DataFrame(out,columns=["Time", "EMG", "Mat[0][0]", "Mat[1][0]", "Mat[2][0]", "Mat[2][1]", "Mat[2][2]"])
+            # filepath, _ = QFileDialog.getSaveFileName(
+            #         self, "Save file", "", "All Files (*);; Text Files (*.txt)"
+            #     )
+            # if filepath != "":
+            #     out_df.to_csv(filepath, index=False)
+
+        except Exception as e:
+            print(e)
+
+    def Adjust_rate(self, dataframe,data_len):
+        values = dataframe.tolist()
+        result = []
+
+        for i, value in enumerate(values):
+            result.append(value)
+            result.append(value)
+
+        while data_len > len(result):
+            result.append("")
+
+
+        print(np.array(result).T.shape)
+
+        return np.array(result).T
 
 app = QtWidgets.QApplication(sys.argv)
 window = Ui()
