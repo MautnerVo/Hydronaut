@@ -47,7 +47,7 @@ class MatplotlibWidget(QtWidgets.QWidget):
 class Ui(QtWidgets.QMainWindow):
     def __init__(self):
         super(Ui, self).__init__()
-        uic.loadUi(r'C:\Users\vojtu\PycharmProjects\Hydronaut\Vizualizace\Hydronaut_VisualisationTool.ui', self)
+        uic.loadUi(r'Hydronaut_VisualisationTool.ui', self)
 
         self.widget_2 = self.findChild(QtWidgets.QWidget, 'widget_2')
         self.widget = self.findChild(QtWidgets.QWidget, 'widget')
@@ -72,6 +72,12 @@ class Ui(QtWidgets.QMainWindow):
         self.pb_export.clicked.connect(self.Save_file)
         self.horizontalScrollBar.valueChanged.connect(self.Update_Plot_1)
         self.horizontalScrollBar_1.valueChanged.connect(self.Update_Plots)
+
+        self.sb_set_offset.setMaximum(1000000)
+        self.sb_set_pos.setMaximum(1000000)
+
+        self.sb_set_offset.editingFinished.connect(self.Update_Plot_1)
+        self.sb_set_pos.editingFinished.connect(self.Update_Plots)
 
         self.df_emg = None
         self.df_imu = None
@@ -116,6 +122,7 @@ class Ui(QtWidgets.QMainWindow):
             if self.df_imu is None:
                 self.pb_load_IMU.setStyleSheet("color: rgb(255, 0, 0);")
 
+
     def load_emg(self):
             self.pb_load_EMG.setStyleSheet("color: rgb(0, 0, 255);")
             folder_path = QFileDialog.getExistingDirectory(
@@ -142,6 +149,7 @@ class Ui(QtWidgets.QMainWindow):
                         except Exception as e:
                             print(f"Error reading file {file_path}: {e}")
 
+
                 if not self.df_emg[0].empty and not self.df_emg[1].empty and not self.df_emg[2].empty and not self.df_emg[3].empty:
                     self.pb_load_EMG.setStyleSheet("color: rgb(0, 255, 0);")
                     self.horizontalScrollBar.setRange(0, int((len(self.df_emg[0]) - 1000) / 2))
@@ -151,6 +159,20 @@ class Ui(QtWidgets.QMainWindow):
                     self.pb_load_EMG.setStyleSheet("color: rgb(255, 0, 0);")
             if self.df_emg is None:
                 self.pb_load_EMG.setStyleSheet("color: rgb(255, 0, 0);")
+
+    def arrange_size(self, size,df_emg):
+            for i,df in enumerate(df_emg):
+                values = df.to_numpy().tolist()
+                result = []
+
+                for value in values:
+                    result.append(value)
+
+                while size > len(result):
+                    result.append([np.nan, np.nan])
+
+                df_emg[i] = pd.DataFrame(result,columns=df.columns)
+            return df_emg
 
     @staticmethod
     def embed_matplotlib(target_widget):
@@ -169,7 +191,9 @@ class Ui(QtWidgets.QMainWindow):
     def Update_Plot_1(self):
         data = self.df_emg[0].iloc[:, 1].values[::2]
         value = self.horizontalScrollBar.value()
-        offset=self.horizontalScrollBar_1.value()
+        value += self.sb_set_offset.value()
+        offset= self.horizontalScrollBar_1.value()
+        offset += self.sb_set_pos.value()
         self.pltWidget.plot(data=data,min=value+offset,max=value+1000+offset)
 
     def Update_Plot_2(self):
@@ -177,6 +201,7 @@ class Ui(QtWidgets.QMainWindow):
         data1 = self.df_imu[0].iloc[:,1].values
         data2 = self.df_imu[0].iloc[:,2].values
         value = self.horizontalScrollBar_1.value()
+        value +=  self.sb_set_pos.value()
         self.pltWidget1.plot(data=data,data1=data1,data2=data2,min=value,max=value+1000)
 
     def Update_Plots(self):
@@ -184,27 +209,72 @@ class Ui(QtWidgets.QMainWindow):
         self.Update_Plot_2()
 
     def Save_file(self):
-        # value = self.horizontalScrollBar.value()
-        try:
-            out = [
-                [x / 200 for x in range(len(self.df_emg[0]))],
-                self.df_emg[0],
-                self.Adjust_rate(self.df_imu[0]["Mat[0][0]"],len(self.df[0])),
-                self.Adjust_rate(self.df_imu[0]["Mat[1][0]"],len(self.df[0])),
-                self.Adjust_rate(self.df_imu[0]["Mat[2][0]"],len(self.df[0])),
-                self.Adjust_rate(self.df_imu[0]["Mat[2][1]"],len(self.df[0])),
-                self.Adjust_rate(self.df_imu[0]["Mat[2][2]"],len(self.df[0])),
-            ]
-            out = np.array(out)
-            print(out.shape)
-            print(self.df_emg[0].shape)
+        value = self.horizontalScrollBar.value()
+        value += self.sb_set_offset.value()
+        df_emg_cut = [df[value:] for df in self.df_emg]
 
-            # out_df = pd.DataFrame(out,columns=["Time", "EMG", "Mat[0][0]", "Mat[1][0]", "Mat[2][0]", "Mat[2][1]", "Mat[2][2]"])
+        df_emg_cut = self.arrange_size(max(df_emg.shape[0] for df_emg in df_emg_cut),df_emg_cut)
+
+        print(df_emg_cut[0].shape)
+        print(df_emg_cut[1].shape)
+        print(df_emg_cut[2].shape)
+        print(df_emg_cut[3].shape)
+        print(len([x / 200 for x in range(len(df_emg_cut[0]))]))
+        try:
+            out_df = pd.DataFrame({
+                "Sample": [x / 200 for x in range(len(df_emg_cut[0]))],
+                "Biceps_EMG": df_emg_cut[0].iloc[:, 1].values,
+                "Biceps_Mat[0][0]": self.Adjust_rate(self.df_imu[0]["Mat[0][0]"], len(df_emg_cut[0])).flatten(),
+                "Biceps_Mat[1][0]": self.Adjust_rate(self.df_imu[0]["Mat[1][0]"], len(df_emg_cut[0])).flatten(),
+                "Biceps_Mat[2][0]": self.Adjust_rate(self.df_imu[0]["Mat[2][0]"], len(df_emg_cut[0])).flatten(),
+                "Biceps_Mat[2][1]": self.Adjust_rate(self.df_imu[0]["Mat[2][1]"], len(df_emg_cut[0])).flatten(),
+                "Biceps_Mat[2][2]": self.Adjust_rate(self.df_imu[0]["Mat[2][2]"], len(df_emg_cut[0])).flatten(),
+                "Triceps_EMG": df_emg_cut[1].iloc[:, 1].values,
+                "Triceps_Mat[0][0]": self.Adjust_rate(self.df_imu[1]["Mat[0][0]"], len(df_emg_cut[0])).flatten(),
+                "Triceps_Mat[1][0]": self.Adjust_rate(self.df_imu[1]["Mat[1][0]"], len(df_emg_cut[0])).flatten(),
+                "Triceps_Mat[2][0]": self.Adjust_rate(self.df_imu[1]["Mat[2][0]"], len(df_emg_cut[0])).flatten(),
+                "Triceps_Mat[2][1]": self.Adjust_rate(self.df_imu[1]["Mat[2][1]"], len(df_emg_cut[0])).flatten(),
+                "Triceps_Mat[2][2]": self.Adjust_rate(self.df_imu[1]["Mat[2][2]"], len(df_emg_cut[0])).flatten(),
+                "Rectus_EMG": df_emg_cut[2].iloc[:, 1].values,
+                "Rectus_Mat[0][0]": self.Adjust_rate(self.df_imu[2]["Mat[0][0]"],
+                                                     len(df_emg_cut[0])).flatten(),
+                "Rectus_Mat[1][0]": self.Adjust_rate(self.df_imu[2]["Mat[1][0]"],
+                                                     len(df_emg_cut[0])).flatten(),
+                "Rectus_Mat[2][0]": self.Adjust_rate(self.df_imu[2]["Mat[2][0]"],
+                                                     len(df_emg_cut[0])).flatten(),
+                "Rectus_Mat[2][1]": self.Adjust_rate(self.df_imu[2]["Mat[2][1]"],
+                                                     len(df_emg_cut[0])).flatten(),
+                "Rectus_Mat[2][2]": self.Adjust_rate(self.df_imu[2]["Mat[2][2]"],
+                                                     len(df_emg_cut[0])).flatten(),
+                "Gastrocnemious_EMG": df_emg_cut[3].iloc[:, 1].values,
+                "Gastrocnemious_Mat[0][0]": self.Adjust_rate(self.df_imu[3]["Mat[0][0]"],
+                                                      len(df_emg_cut[0])).flatten(),
+                "Gastrocnemious_Mat[1][0]": self.Adjust_rate(self.df_imu[3]["Mat[1][0]"],
+                                                      len(df_emg_cut[0])).flatten(),
+                "Gastrocnemious_Mat[2][0]": self.Adjust_rate(self.df_imu[3]["Mat[2][0]"],
+                                                      len(df_emg_cut[0])).flatten(),
+                "Gastrocnemious_Mat[2][1]": self.Adjust_rate(self.df_imu[3]["Mat[2][1]"],
+                                                      len(df_emg_cut[0])).flatten(),
+                "Gastrocnemious_Mat[2][2]": self.Adjust_rate(self.df_imu[3]["Mat[2][2]"],
+                                                      len(df_emg_cut[0])).flatten(),
+            })
+
+            # print(out_df.shape)
+            # print(self.df_emg[0].shape)
+
             # filepath, _ = QFileDialog.getSaveFileName(
             #         self, "Save file", "", "All Files (*);; Text Files (*.txt)"
             #     )
-            # if filepath != "":
-            #     out_df.to_csv(filepath, index=False)
+
+            filepath, _ = QFileDialog.getSaveFileName(
+                self,
+                "Save file",
+                "",
+                "CSV Files (*.csv);;All Files (*)"
+            )
+
+            if filepath != "":
+                out_df.to_csv(filepath, index=False)
 
         except Exception as e:
             print(e)
@@ -220,10 +290,8 @@ class Ui(QtWidgets.QMainWindow):
         while data_len > len(result):
             result.append("")
 
-
-        print(np.array(result).T.shape)
-
-        return np.array(result).T
+        print(np.array(result).shape)
+        return np.array(result)
 
 app = QtWidgets.QApplication(sys.argv)
 window = Ui()

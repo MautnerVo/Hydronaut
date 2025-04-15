@@ -410,7 +410,7 @@
          <widget class="QSpinBox" name="sb_set_pos"/>
         </item>
         <item row="5" column="0">
-         <widget class="QSpinBox" name="spinBox_2"/>
+         <widget class="QSpinBox" name="sb_set_offset"/>
         </item>
         <item row="5" column="1">
          <spacer name="horizontalSpacer">
