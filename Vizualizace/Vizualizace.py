@@ -1,11 +1,16 @@
 import sys
+import threading
 from PyQt5 import QtWidgets, uic
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QFileDialog
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
 import os
 import pandas as pd
+import faulthandler
+faulthandler.enable()
+
 
 class MatplotlibWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
@@ -45,6 +50,8 @@ class MatplotlibWidget(QtWidgets.QWidget):
         super(MatplotlibWidget, self).resizeEvent(event)
 
 class Ui(QtWidgets.QMainWindow):
+    emg_loading_finished = pyqtSignal(bool)
+    imu_loading_finished = pyqtSignal(bool)
     def __init__(self):
         super(Ui, self).__init__()
         uic.loadUi(r'Hydronaut_VisualisationTool.ui', self)
@@ -66,8 +73,8 @@ class Ui(QtWidgets.QMainWindow):
         self.pltWidget1 = self.embed_matplotlib(self.widget)
 
         self.horizontalScrollBar.valueChanged.connect(self.Update_Plot_1)
-        self.pb_load_EMG.clicked.connect(self.load_emg)
-        self.pb_load_IMU.clicked.connect(self.load_imu)
+        self.pb_load_EMG.clicked.connect(self.emg_loader)
+        self.pb_load_IMU.clicked.connect(self.imu_loader)
 
         self.pb_export.clicked.connect(self.Save_file)
         self.horizontalScrollBar.valueChanged.connect(self.Update_Plot_1)
@@ -79,86 +86,114 @@ class Ui(QtWidgets.QMainWindow):
         self.sb_set_offset.editingFinished.connect(self.Update_Plot_1)
         self.sb_set_pos.editingFinished.connect(self.Update_Plots)
 
+        self.emg_loading_finished.connect(self.finish_emg_loading)
+        self.imu_loading_finished.connect(self.finish_imu_loading)
+
         self.df_emg = None
         self.df_imu = None
-        self.IMU = None
-        self.EMG = None
         self.show()
 
-    def load_imu(self):
-            self.pb_load_IMU.setStyleSheet("color: rgb(0, 0, 255);")
-            folder_path = QFileDialog.getExistingDirectory(
-                self,
-                "Select IMU Folder",
-                "",
-                QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks
-            )
+    def imu_loader(self):
 
-            if folder_path != "":
-                self.df_imu = [pd.DataFrame(),pd.DataFrame(),pd.DataFrame(),pd.DataFrame()]
-                for file in os.listdir(folder_path):
-                    file_path = os.path.join(folder_path, file).replace("\\", "/")
-                    if os.path.isfile(file_path):
-                        print("Processing file:", file)
-                        try:
-                            if self.df_imu[0].empty and file.startswith("b"):
-                                self.df_imu[0] = pd.read_csv(file_path, delimiter="\t", skiprows=4)
-                            elif self.df_imu[1].empty and file.startswith("t"):
-                                self.df_imu[1] = pd.read_csv(file_path, delimiter="\t", skiprows=4)
-                            elif self.df_imu[2].empty and file.startswith("r"):
-                                self.df_imu[2] = pd.read_csv(file_path, delimiter="\t", skiprows=4)
-                            elif self.df_imu[3].empty and file.startswith("g"):
-                                self.df_imu[3] = pd.read_csv(file_path, delimiter="\t", skiprows=4)
-                        except Exception as e:
-                            print(f"Error reading file {file_path}: {e}")
+        self.pb_load_IMU.setStyleSheet("color: rgb(0, 0, 255);")
+        folder_path = QFileDialog.getExistingDirectory(
+            self,
+            "Select IMU Folder",
+            "",
+            QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks
+        )
+        if folder_path != "":
+            thread_imu = threading.Thread(target=self.load_imu, args=(folder_path,))
+            thread_imu.start()
+        else:
+            self.pb_load_IMU.setStyleSheet("color: rgb(255, 0, 0);")
 
-                if not self.df_imu[0].empty and not self.df_imu[1].empty and not self.df_imu[2].empty and not self.df_imu[3].empty:
-                    self.pb_load_IMU.setStyleSheet("color: rgb(0, 255, 0);")
-                    self.horizontalScrollBar_1.setRange(0, len(self.df_imu[0]) - 1000)
-                    self.horizontalScrollBar_1.setSingleStep(1)
-                    self.Update_Plot_2()
-                else:
-                    self.pb_load_IMU.setStyleSheet("color: rgb(255, 0, 0);")
-            if self.df_imu is None:
-                self.pb_load_IMU.setStyleSheet("color: rgb(255, 0, 0);")
+    def load_imu(self,folder_path):
+            self.df_imu = [pd.DataFrame(),pd.DataFrame(),pd.DataFrame(),pd.DataFrame()]
+            success = False
+            for file in os.listdir(folder_path):
+                file_path = os.path.join(folder_path, file).replace("\\", "/")
+                if os.path.isfile(file_path):
+                    print("Processing file:", file)
+                    try:
+                        if self.df_imu[0].empty and file.startswith("b"):
+                            self.df_imu[0] = pd.read_csv(file_path, delimiter="\t", skiprows=4)
+                        elif self.df_imu[1].empty and file.startswith("t"):
+                            self.df_imu[1] = pd.read_csv(file_path, delimiter="\t", skiprows=4)
+                        elif self.df_imu[2].empty and file.startswith("r"):
+                            self.df_imu[2] = pd.read_csv(file_path, delimiter="\t", skiprows=4)
+                        elif self.df_imu[3].empty and file.startswith("g"):
+                            self.df_imu[3] = pd.read_csv(file_path, delimiter="\t", skiprows=4)
+                    except Exception as e:
+                        print(f"Error reading file {file_path}: {e}")
+
+            if not self.df_imu[0].empty and not self.df_imu[1].empty and not self.df_imu[2].empty and not self.df_imu[3].empty:
+
+                success = True
+            else:
+                success = False
+
+            self.imu_loading_finished.emit(success)
+
+    def finish_imu_loading(self,success):
+        if success:
+            self.pb_load_IMU.setStyleSheet("color: rgb(0, 255, 0);")
+            self.horizontalScrollBar_1.setRange(0, len(self.df_imu[0]) - 1000)
+            self.horizontalScrollBar_1.setSingleStep(1)
+            self.Update_Plot_2()
+        else:
+            self.pb_load_IMU.setStyleSheet("color: rgb(255, 0, 0);")
+
+    def emg_loader(self):
+        self.pb_load_EMG.setStyleSheet("color: rgb(0, 0, 255);")
+        folder_path = QFileDialog.getExistingDirectory(
+            self,
+            "Select EMG Folder",
+            "",
+            QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks
+        )
+        if folder_path != "":
+            thread_emg = threading.Thread(target=self.load_emg,args=(folder_path,))
+            thread_emg.start()
+        else:
+            self.pb_load_EMG.setStyleSheet("color: rgb(255, 0, 0);")
 
 
-    def load_emg(self):
-            self.pb_load_EMG.setStyleSheet("color: rgb(0, 0, 255);")
-            folder_path = QFileDialog.getExistingDirectory(
-                self,
-                "Select EMG Folder",
-                "",
-                QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks
-            )
-            if folder_path != "":
-                self.df_emg = [pd.DataFrame(),pd.DataFrame(),pd.DataFrame(),pd.DataFrame()]
-                for path in os.listdir(folder_path):
-                    file_path = os.path.join(folder_path, path).replace("\\", "/")
-                    if os.path.isfile(file_path):
-                        print("Processing file:", path)
-                        try:
-                            if self.df_emg[0].empty and path.startswith("b"):
-                                self.df_emg[0] = pd.read_csv(file_path, delimiter="\t")
-                            elif self.df_emg[1].empty and path.startswith("t"):
-                                self.df_emg[1] = pd.read_csv(file_path, delimiter="\t")
-                            elif self.df_emg[2].empty and path.startswith("r"):
-                                self.df_emg[2] = pd.read_csv(file_path, delimiter="\t")
-                            elif self.df_emg[3].empty and path.startswith("g"):
-                                self.df_emg[3] = pd.read_csv(file_path, delimiter="\t")
-                        except Exception as e:
-                            print(f"Error reading file {file_path}: {e}")
+    def load_emg(self,folder_path):
+            self.df_emg = [pd.DataFrame(),pd.DataFrame(),pd.DataFrame(),pd.DataFrame()]
+            success = False
+            for path in os.listdir(folder_path):
+                file_path = os.path.join(folder_path, path).replace("\\", "/")
+                if os.path.isfile(file_path):
+                    print("Processing file:", path)
+                    try:
+                        if self.df_emg[0].empty and path.startswith("b"):
+                            self.df_emg[0] = pd.read_csv(file_path, delimiter="\t")
+                        elif self.df_emg[1].empty and path.startswith("t"):
+                            self.df_emg[1] = pd.read_csv(file_path, delimiter="\t")
+                        elif self.df_emg[2].empty and path.startswith("r"):
+                            self.df_emg[2] = pd.read_csv(file_path, delimiter="\t")
+                        elif self.df_emg[3].empty and path.startswith("g"):
+                            self.df_emg[3] = pd.read_csv(file_path, delimiter="\t")
+                    except Exception as e:
+                        print(f"Error reading file {file_path}: {e}")
 
 
-                if not self.df_emg[0].empty and not self.df_emg[1].empty and not self.df_emg[2].empty and not self.df_emg[3].empty:
-                    self.pb_load_EMG.setStyleSheet("color: rgb(0, 255, 0);")
-                    self.horizontalScrollBar.setRange(0, int((len(self.df_emg[0]) - 1000) / 2))
-                    self.horizontalScrollBar.setSingleStep(1)
-                    self.Update_Plot_1()
-                else:
-                    self.pb_load_EMG.setStyleSheet("color: rgb(255, 0, 0);")
-            if self.df_emg is None:
-                self.pb_load_EMG.setStyleSheet("color: rgb(255, 0, 0);")
+            if not self.df_emg[0].empty and not self.df_emg[1].empty and not self.df_emg[2].empty and not self.df_emg[3].empty:
+                success = True
+            else:
+                success = False
+
+            self.emg_loading_finished.emit(success)
+
+    def finish_emg_loading(self,success):
+        if success:
+            self.pb_load_EMG.setStyleSheet("color: rgb(0, 255, 0);")
+            self.horizontalScrollBar.setRange(0, int((len(self.df_emg[0]) - 1000) / 2))
+            self.horizontalScrollBar.setSingleStep(1)
+            self.Update_Plot_1()
+        else:
+            self.pb_load_EMG.setStyleSheet("color: rgb(255, 0, 0);")
 
     def arrange_size(self, size,df_emg):
             for i,df in enumerate(df_emg):
@@ -197,9 +232,9 @@ class Ui(QtWidgets.QMainWindow):
         self.pltWidget.plot(data=data,min=value+offset,max=value+1000+offset)
 
     def Update_Plot_2(self):
-        data = self.df_imu[0].iloc[:,0].values
-        data1 = self.df_imu[0].iloc[:,1].values
-        data2 = self.df_imu[0].iloc[:,2].values
+        data = self.df_imu[0].iloc[:,9].values
+        data1 = self.df_imu[0].iloc[:,10].values
+        data2 = self.df_imu[0].iloc[:,11].values
         value = self.horizontalScrollBar_1.value()
         value +=  self.sb_set_pos.value()
         self.pltWidget1.plot(data=data,data1=data1,data2=data2,min=value,max=value+1000)
