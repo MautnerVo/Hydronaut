@@ -325,19 +325,6 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="0">
-         <spacer name="horizontalSpacer_4">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
         <item row="3" column="0">
          <spacer name="horizontalSpacer_3">
           <property name="orientation">
@@ -424,6 +411,13 @@
            </size>
           </property>
          </spacer>
+        </item>
+        <item row="1" column="0">
+         <widget class="QCheckBox" name="cb_local_maximum">
+          <property name="text">
+           <string>Local maximum</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>

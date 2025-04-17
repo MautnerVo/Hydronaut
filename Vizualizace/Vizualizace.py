@@ -25,21 +25,25 @@ class MatplotlibWidget(QtWidgets.QWidget):
         self.layout.setStretch(0, 1)
         self.layout.setContentsMargins(0, 0, 0, 0)
 
-    def plot(self, data,data1=None,data2=None, max=-1, min=0):
+    def plot(self, data,data1=None,data2=None, max=-1, min=0,local_max=False):
         # print(min,max,len(data))
         self.figure.clear()
         ax = self.figure.add_subplot(111)
         x_values = np.arange(len(data))[min:max]
         ax.plot(x_values,data[min:max])
-        try:
-            ax.plot(x_values,data1[min:max],color="red")
-            ax.plot(x_values,data2[min:max],color="green")
-        except:
-            pass
+        if data1 is not None:
+            try:
+                ax.plot(x_values,data1[min:max],color="red")
+                ax.plot(x_values,data2[min:max],color="green")
+            except:
+                pass
 
         # ax.set_xticks([])
         # ax.set_yticks([])
-        ax.set_ylim(data.min(),data.max())
+        if not local_max:
+            ax.set_ylim(data.min(),data.max())
+        else:
+            ax.set_ylim(x_values.min(),x_values.max())
 
         ax.tick_params(axis='x', rotation=45)
         self.figure.tight_layout(pad=0.0)
@@ -71,6 +75,7 @@ class Ui(QtWidgets.QMainWindow):
 
         self.pltWidget = self.embed_matplotlib(self.widget_2)
         self.pltWidget1 = self.embed_matplotlib(self.widget)
+        self.cb_local_maximum = self.findChild(QtWidgets.QCheckBox, 'cb_local_maximum')
 
         self.horizontalScrollBar.valueChanged.connect(self.Update_Plot_1)
         self.pb_load_EMG.clicked.connect(self.emg_loader)
@@ -229,7 +234,8 @@ class Ui(QtWidgets.QMainWindow):
         value += self.sb_set_offset.value()
         offset= self.horizontalScrollBar_1.value()
         offset += self.sb_set_pos.value()
-        self.pltWidget.plot(data=data,min=value+offset,max=value+1000+offset)
+        checked = self.cb_local_maximum.isChecked()
+        self.pltWidget.plot(data=data,min=value+offset,max=value+1000+offset,local_max=checked)
 
     def Update_Plot_2(self):
         data = self.df_imu[0].iloc[:,9].values
@@ -237,7 +243,8 @@ class Ui(QtWidgets.QMainWindow):
         data2 = self.df_imu[0].iloc[:,11].values
         value = self.horizontalScrollBar_1.value()
         value +=  self.sb_set_pos.value()
-        self.pltWidget1.plot(data=data,data1=data1,data2=data2,min=value,max=value+1000)
+        checked = self.cb_local_maximum.isChecked()
+        self.pltWidget1.plot(data=data,data1=data1,data2=data2,min=value,max=value+1000,local_max=checked   )
 
     def Update_Plots(self):
         self.Update_Plot_1()
