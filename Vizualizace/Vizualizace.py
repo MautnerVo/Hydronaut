@@ -35,15 +35,33 @@ class MatplotlibWidget(QtWidgets.QWidget):
             try:
                 ax.plot(x_values,data1[min:max],color="red")
                 ax.plot(x_values,data2[min:max],color="green")
+
+                if not local_max:
+                    y_min = np.nanmin([
+                        np.min(data),
+                        np.min(data1) if data1 is not None else np.inf,
+                        np.min(data2) if data2 is not None else np.inf
+                    ])
+                    y_max = np.max(data)
+                else:
+                    y_min = np.nanmin([
+                        np.min(data[min:max]),
+                        np.min(data1[min:max]) if data1 is not None else np.inf,
+                        np.min(data2[min:max]) if data2 is not None else np.inf
+                    ])
+                    y_max = np.max(data)
+                ax.set_ylim(y_min, y_max)
             except:
                 pass
 
         # ax.set_xticks([])
         # ax.set_yticks([])
-        if not local_max:
-            ax.set_ylim(data.min(),data.max())
-        else:
-            ax.set_ylim(x_values.min(),x_values.max())
+
+        if data1 is None and data2 is None:
+            if not local_max:
+                ax.set_ylim(data.min(),data.max())
+            else:
+                ax.set_ylim(data[min:max].min(), data[min:max].max())
 
         ax.tick_params(axis='x', rotation=45)
         self.figure.tight_layout(pad=0.0)
@@ -90,12 +108,13 @@ class Ui(QtWidgets.QMainWindow):
 
         self.sb_set_offset.editingFinished.connect(self.Update_Plot_1)
         self.sb_set_pos.editingFinished.connect(self.Update_Plots)
+        self.cb_local_maximum.stateChanged.connect(self.Update_Plots)
 
         self.emg_loading_finished.connect(self.finish_emg_loading)
         self.imu_loading_finished.connect(self.finish_imu_loading)
 
-        self.df_emg = None
-        self.df_imu = None
+        self.df_emg = pd.DataFrame()
+        self.df_imu = pd.DataFrame()
         self.show()
 
     def imu_loader(self):
@@ -229,22 +248,24 @@ class Ui(QtWidgets.QMainWindow):
 
 
     def Update_Plot_1(self):
-        data = self.df_emg[0].iloc[:, 1].values[::2]
-        value = self.horizontalScrollBar.value()
-        value += self.sb_set_offset.value()
-        offset= self.horizontalScrollBar_1.value()
-        offset += self.sb_set_pos.value()
-        checked = self.cb_local_maximum.isChecked()
-        self.pltWidget.plot(data=data,min=value+offset,max=value+1000+offset,local_max=checked)
+        if not self.df_emg.empty:
+            data = self.df_emg[0].iloc[:, 1].values[::2]
+            value = self.horizontalScrollBar.value()
+            value += self.sb_set_offset.value()
+            offset= self.horizontalScrollBar_1.value()
+            offset += self.sb_set_pos.value()
+            checked = self.cb_local_maximum.isChecked()
+            self.pltWidget.plot(data=data,min=value+offset,max=value+1000+offset,local_max=checked)
 
     def Update_Plot_2(self):
-        data = self.df_imu[0].iloc[:,9].values
-        data1 = self.df_imu[0].iloc[:,10].values
-        data2 = self.df_imu[0].iloc[:,11].values
-        value = self.horizontalScrollBar_1.value()
-        value +=  self.sb_set_pos.value()
-        checked = self.cb_local_maximum.isChecked()
-        self.pltWidget1.plot(data=data,data1=data1,data2=data2,min=value,max=value+1000,local_max=checked   )
+        if not self.df_imu.empty:
+            data = self.df_imu[0].iloc[:,9].values
+            data1 = self.df_imu[0].iloc[:,10].values
+            data2 = self.df_imu[0].iloc[:,11].values
+            value = self.horizontalScrollBar_1.value()
+            value +=  self.sb_set_pos.value()
+            checked = self.cb_local_maximum.isChecked()
+            self.pltWidget1.plot(data=data,data1=data1,data2=data2,min=value,max=value+1000,local_max=checked)
 
     def Update_Plots(self):
         self.Update_Plot_1()
