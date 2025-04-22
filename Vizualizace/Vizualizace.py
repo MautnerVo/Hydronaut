@@ -26,7 +26,7 @@ class MatplotlibWidget(QtWidgets.QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
 
     def plot(self, data,data1=None,data2=None, max=-1, min=0,local_max=False):
-        # print(min,max,len(data))
+
         self.figure.clear()
         ax = self.figure.add_subplot(111)
         x_values = np.arange(len(data))[min:max]
@@ -113,8 +113,8 @@ class Ui(QtWidgets.QMainWindow):
         self.emg_loading_finished.connect(self.finish_emg_loading)
         self.imu_loading_finished.connect(self.finish_imu_loading)
 
-        self.df_emg = pd.DataFrame()
-        self.df_imu = pd.DataFrame()
+        self.df_emg = []
+        self.df_imu = []
         self.show()
 
     def imu_loader(self):
@@ -156,7 +156,6 @@ class Ui(QtWidgets.QMainWindow):
                 success = True
             else:
                 success = False
-
             self.imu_loading_finished.emit(success)
 
     def finish_imu_loading(self,success):
@@ -248,7 +247,7 @@ class Ui(QtWidgets.QMainWindow):
 
 
     def Update_Plot_1(self):
-        if not self.df_emg.empty:
+        if len(self.df_emg) != 0:
             data = self.df_emg[0].iloc[:, 1].values[::2]
             value = self.horizontalScrollBar.value()
             value += self.sb_set_offset.value()
@@ -258,7 +257,7 @@ class Ui(QtWidgets.QMainWindow):
             self.pltWidget.plot(data=data,min=value+offset,max=value+1000+offset,local_max=checked)
 
     def Update_Plot_2(self):
-        if not self.df_imu.empty:
+        if len(self.df_emg) != 0:
             data = self.df_imu[0].iloc[:,9].values
             data1 = self.df_imu[0].iloc[:,10].values
             data2 = self.df_imu[0].iloc[:,11].values
@@ -282,6 +281,7 @@ class Ui(QtWidgets.QMainWindow):
         print(df_emg_cut[1].shape)
         print(df_emg_cut[2].shape)
         print(df_emg_cut[3].shape)
+
         print(len([x / 200 for x in range(len(df_emg_cut[0]))]))
         try:
             out_df = pd.DataFrame({
