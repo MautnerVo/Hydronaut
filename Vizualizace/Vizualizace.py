@@ -76,7 +76,7 @@ class Ui(QtWidgets.QMainWindow):
     imu_loading_finished = pyqtSignal(bool)
     def __init__(self):
         super(Ui, self).__init__()
-        uic.loadUi(r'Hydronaut_VisualisationTool.ui', self)
+        uic.loadUi(os.path.dirname(os.path.abspath(__file__))+r'\\Hydronaut_VisualisationTool.ui', self)
 
         self.widget_2 = self.findChild(QtWidgets.QWidget, 'widget_2')
         self.widget = self.findChild(QtWidgets.QWidget, 'widget')
@@ -144,9 +144,9 @@ class Ui(QtWidgets.QMainWindow):
                             self.df_imu[0] = pd.read_csv(file_path, delimiter="\t", skiprows=4)
                         elif self.df_imu[1].empty and file.startswith("t"):
                             self.df_imu[1] = pd.read_csv(file_path, delimiter="\t", skiprows=4)
-                        elif self.df_imu[2].empty and file.startswith("r"):
+                        elif self.df_imu[2].empty and file.startswith("g"):
                             self.df_imu[2] = pd.read_csv(file_path, delimiter="\t", skiprows=4)
-                        elif self.df_imu[3].empty and file.startswith("g"):
+                        elif self.df_imu[3].empty and file.startswith("r"):
                             self.df_imu[3] = pd.read_csv(file_path, delimiter="\t", skiprows=4)
                     except Exception as e:
                         print(f"Error reading file {file_path}: {e}")
@@ -163,7 +163,7 @@ class Ui(QtWidgets.QMainWindow):
             self.pb_load_IMU.setStyleSheet("color: rgb(0, 255, 0);")
             self.horizontalScrollBar_1.setRange(0, len(self.df_imu[0]) - 1000)
             self.horizontalScrollBar_1.setSingleStep(1)
-            self.Update_Plot_2()
+            self.Update_Plot_1()
         else:
             self.pb_load_IMU.setStyleSheet("color: rgb(255, 0, 0);")
 
@@ -194,9 +194,9 @@ class Ui(QtWidgets.QMainWindow):
                             self.df_emg[0] = pd.read_csv(file_path, delimiter="\t")
                         elif self.df_emg[1].empty and path.startswith("t"):
                             self.df_emg[1] = pd.read_csv(file_path, delimiter="\t")
-                        elif self.df_emg[2].empty and path.startswith("r"):
+                        elif self.df_emg[2].empty and path.startswith("g"):
                             self.df_emg[2] = pd.read_csv(file_path, delimiter="\t")
-                        elif self.df_emg[3].empty and path.startswith("g"):
+                        elif self.df_emg[3].empty and path.startswith("r"):
                             self.df_emg[3] = pd.read_csv(file_path, delimiter="\t")
                     except Exception as e:
                         print(f"Error reading file {file_path}: {e}")
@@ -214,7 +214,7 @@ class Ui(QtWidgets.QMainWindow):
             self.pb_load_EMG.setStyleSheet("color: rgb(0, 255, 0);")
             self.horizontalScrollBar.setRange(0, int((len(self.df_emg[0]) - 1000) / 2))
             self.horizontalScrollBar.setSingleStep(1)
-            self.Update_Plot_1()
+            self.Update_Plot_2()
         else:
             self.pb_load_EMG.setStyleSheet("color: rgb(255, 0, 0);")
 
@@ -248,23 +248,23 @@ class Ui(QtWidgets.QMainWindow):
 
     def Update_Plot_1(self):
         if len(self.df_emg) != 0:
-            data = self.df_emg[0].iloc[:, 1].values[::2]
+            data = self.df_imu[0].iloc[:, 9].values
+            data1 = self.df_imu[0].iloc[:, 10].values
+            data2 = self.df_imu[0].iloc[:, 11].values
             value = self.horizontalScrollBar.value()
             value += self.sb_set_offset.value()
             offset= self.horizontalScrollBar_1.value()
             offset += self.sb_set_pos.value()
             checked = self.cb_local_maximum.isChecked()
-            self.pltWidget.plot(data=data,min=value+offset,max=value+1000+offset,local_max=checked)
+            self.pltWidget.plot(data=data,data1=data1,data2=data2,min=value+offset,max=value+1000+offset,local_max=checked)
 
     def Update_Plot_2(self):
-        if len(self.df_emg) != 0:
-            data = self.df_imu[0].iloc[:,9].values
-            data1 = self.df_imu[0].iloc[:,10].values
-            data2 = self.df_imu[0].iloc[:,11].values
+        if len(self.df_imu) != 0:
+            data = self.df_emg[0].iloc[:, 1].values[::2]
             value = self.horizontalScrollBar_1.value()
             value +=  self.sb_set_pos.value()
             checked = self.cb_local_maximum.isChecked()
-            self.pltWidget1.plot(data=data,data1=data1,data2=data2,min=value,max=value+1000,local_max=checked)
+            self.pltWidget1.plot(data=data,min=value,max=value+1000,local_max=checked)
 
     def Update_Plots(self):
         self.Update_Plot_1()
@@ -298,6 +298,17 @@ class Ui(QtWidgets.QMainWindow):
                 "Triceps_Mat[2][0]": self.Adjust_rate(self.df_imu[1]["Mat[2][0]"], len(df_emg_cut[0])).flatten(),
                 "Triceps_Mat[2][1]": self.Adjust_rate(self.df_imu[1]["Mat[2][1]"], len(df_emg_cut[0])).flatten(),
                 "Triceps_Mat[2][2]": self.Adjust_rate(self.df_imu[1]["Mat[2][2]"], len(df_emg_cut[0])).flatten(),
+                "Gastrocnemious_EMG": df_emg_cut[3].iloc[:, 1].values,
+                "Gastrocnemious_Mat[0][0]": self.Adjust_rate(self.df_imu[3]["Mat[0][0]"],
+                                                             len(df_emg_cut[0])).flatten(),
+                "Gastrocnemious_Mat[1][0]": self.Adjust_rate(self.df_imu[3]["Mat[1][0]"],
+                                                             len(df_emg_cut[0])).flatten(),
+                "Gastrocnemious_Mat[2][0]": self.Adjust_rate(self.df_imu[3]["Mat[2][0]"],
+                                                             len(df_emg_cut[0])).flatten(),
+                "Gastrocnemious_Mat[2][1]": self.Adjust_rate(self.df_imu[3]["Mat[2][1]"],
+                                                             len(df_emg_cut[0])).flatten(),
+                "Gastrocnemious_Mat[2][2]": self.Adjust_rate(self.df_imu[3]["Mat[2][2]"],
+                                                             len(df_emg_cut[0])).flatten(),
                 "Rectus_EMG": df_emg_cut[2].iloc[:, 1].values,
                 "Rectus_Mat[0][0]": self.Adjust_rate(self.df_imu[2]["Mat[0][0]"],
                                                      len(df_emg_cut[0])).flatten(),
@@ -309,17 +320,6 @@ class Ui(QtWidgets.QMainWindow):
                                                      len(df_emg_cut[0])).flatten(),
                 "Rectus_Mat[2][2]": self.Adjust_rate(self.df_imu[2]["Mat[2][2]"],
                                                      len(df_emg_cut[0])).flatten(),
-                "Gastrocnemious_EMG": df_emg_cut[3].iloc[:, 1].values,
-                "Gastrocnemious_Mat[0][0]": self.Adjust_rate(self.df_imu[3]["Mat[0][0]"],
-                                                      len(df_emg_cut[0])).flatten(),
-                "Gastrocnemious_Mat[1][0]": self.Adjust_rate(self.df_imu[3]["Mat[1][0]"],
-                                                      len(df_emg_cut[0])).flatten(),
-                "Gastrocnemious_Mat[2][0]": self.Adjust_rate(self.df_imu[3]["Mat[2][0]"],
-                                                      len(df_emg_cut[0])).flatten(),
-                "Gastrocnemious_Mat[2][1]": self.Adjust_rate(self.df_imu[3]["Mat[2][1]"],
-                                                      len(df_emg_cut[0])).flatten(),
-                "Gastrocnemious_Mat[2][2]": self.Adjust_rate(self.df_imu[3]["Mat[2][2]"],
-                                                      len(df_emg_cut[0])).flatten(),
             })
 
             # print(out_df.shape)
