@@ -271,63 +271,89 @@ class Ui(QtWidgets.QMainWindow):
         self.Update_Plot_2()
 
     def Save_file(self):
-        value = self.horizontalScrollBar.value()
-        value += self.sb_set_offset.value()
-        df_emg_cut = [df[value:] for df in self.df_emg]
-
-        df_emg_cut = self.arrange_size(max(df_emg.shape[0] for df_emg in df_emg_cut),df_emg_cut)
-
-        print(df_emg_cut[0].shape)
-        print(df_emg_cut[1].shape)
-        print(df_emg_cut[2].shape)
-        print(df_emg_cut[3].shape)
-
-        print(len([x / 200 for x in range(len(df_emg_cut[0]))]))
         try:
+            value = self.horizontalScrollBar.value()
+            value += self.sb_set_offset.value()
+
+            df_imu_cut = [df[value:] for df in self.df_imu]
+
+            max_size_imu = max(df.shape[0] for df in df_imu_cut)*2
+            max_size_emg = max(df.shape[0] for df in self.df_emg)
+            max_size = max(max_size_imu, max_size_emg)
+            df_imu_cut = self.arrange_size(
+                max(df_imu.shape[0] for df_imu in df_imu_cut),
+                df_imu_cut
+            )
+            print(max_size)
+            print(df_imu_cut[0].shape)
+            print(df_imu_cut[1].shape)
+            print(df_imu_cut[2].shape)
+            print(df_imu_cut[3].shape)
+            print(len([x / 200 for x in range(len(df_imu_cut[0]))]))
+
+
             out_df = pd.DataFrame({
-                "Sample": [x / 200 for x in range(len(df_emg_cut[0]))],
-                "Biceps_EMG": df_emg_cut[0].iloc[:, 1].values,
-                "Biceps_Mat[0][0]": self.Adjust_rate(self.df_imu[0]["Mat[0][0]"], len(df_emg_cut[0])).flatten(),
-                "Biceps_Mat[1][0]": self.Adjust_rate(self.df_imu[0]["Mat[1][0]"], len(df_emg_cut[0])).flatten(),
-                "Biceps_Mat[2][0]": self.Adjust_rate(self.df_imu[0]["Mat[2][0]"], len(df_emg_cut[0])).flatten(),
-                "Biceps_Mat[2][1]": self.Adjust_rate(self.df_imu[0]["Mat[2][1]"], len(df_emg_cut[0])).flatten(),
-                "Biceps_Mat[2][2]": self.Adjust_rate(self.df_imu[0]["Mat[2][2]"], len(df_emg_cut[0])).flatten(),
-                "Triceps_EMG": df_emg_cut[1].iloc[:, 1].values,
-                "Triceps_Mat[0][0]": self.Adjust_rate(self.df_imu[1]["Mat[0][0]"], len(df_emg_cut[0])).flatten(),
-                "Triceps_Mat[1][0]": self.Adjust_rate(self.df_imu[1]["Mat[1][0]"], len(df_emg_cut[0])).flatten(),
-                "Triceps_Mat[2][0]": self.Adjust_rate(self.df_imu[1]["Mat[2][0]"], len(df_emg_cut[0])).flatten(),
-                "Triceps_Mat[2][1]": self.Adjust_rate(self.df_imu[1]["Mat[2][1]"], len(df_emg_cut[0])).flatten(),
-                "Triceps_Mat[2][2]": self.Adjust_rate(self.df_imu[1]["Mat[2][2]"], len(df_emg_cut[0])).flatten(),
-                "Gastrocnemious_EMG": df_emg_cut[3].iloc[:, 1].values,
-                "Gastrocnemious_Mat[0][0]": self.Adjust_rate(self.df_imu[3]["Mat[0][0]"],
-                                                             len(df_emg_cut[0])).flatten(),
-                "Gastrocnemious_Mat[1][0]": self.Adjust_rate(self.df_imu[3]["Mat[1][0]"],
-                                                             len(df_emg_cut[0])).flatten(),
-                "Gastrocnemious_Mat[2][0]": self.Adjust_rate(self.df_imu[3]["Mat[2][0]"],
-                                                             len(df_emg_cut[0])).flatten(),
-                "Gastrocnemious_Mat[2][1]": self.Adjust_rate(self.df_imu[3]["Mat[2][1]"],
-                                                             len(df_emg_cut[0])).flatten(),
-                "Gastrocnemious_Mat[2][2]": self.Adjust_rate(self.df_imu[3]["Mat[2][2]"],
-                                                             len(df_emg_cut[0])).flatten(),
-                "Rectus_EMG": df_emg_cut[2].iloc[:, 1].values,
-                "Rectus_Mat[0][0]": self.Adjust_rate(self.df_imu[2]["Mat[0][0]"],
-                                                     len(df_emg_cut[0])).flatten(),
-                "Rectus_Mat[1][0]": self.Adjust_rate(self.df_imu[2]["Mat[1][0]"],
-                                                     len(df_emg_cut[0])).flatten(),
-                "Rectus_Mat[2][0]": self.Adjust_rate(self.df_imu[2]["Mat[2][0]"],
-                                                     len(df_emg_cut[0])).flatten(),
-                "Rectus_Mat[2][1]": self.Adjust_rate(self.df_imu[2]["Mat[2][1]"],
-                                                     len(df_emg_cut[0])).flatten(),
-                "Rectus_Mat[2][2]": self.Adjust_rate(self.df_imu[2]["Mat[2][2]"],
-                                                     len(df_emg_cut[0])).flatten(),
+                "Sample": [x / 200 for x in range(max_size)],
+                "Biceps_EMG": self.Adjust_rate(self.df_emg[0].iloc[:, 1].values,max_size,emg=True).flatten(),
+                "Biceps_Mat[0][0]": self.Adjust_rate(df_imu_cut[0]["Mat[0][0]"], max_size).flatten(),
+                "Biceps_Mat[1][0]": self.Adjust_rate(df_imu_cut[0]["Mat[1][0]"], max_size).flatten(),
+                "Biceps_Mat[2][0]": self.Adjust_rate(df_imu_cut[0]["Mat[2][0]"], max_size).flatten(),
+                "Biceps_Mat[2][1]": self.Adjust_rate(df_imu_cut[0]["Mat[2][1]"], max_size).flatten(),
+                "Biceps_Mat[2][2]": self.Adjust_rate(df_imu_cut[0]["Mat[2][2]"], max_size).flatten(),
+                "Triceps_EMG": self.Adjust_rate(self.df_emg[1].iloc[:, 1].values,max_size,emg=True).flatten(),
+                "Triceps_Mat[0][0]": self.Adjust_rate(df_imu_cut[1]["Mat[0][0]"], max_size).flatten(),
+                "Triceps_Mat[1][0]": self.Adjust_rate(df_imu_cut[1]["Mat[1][0]"], max_size).flatten(),
+                "Triceps_Mat[2][0]": self.Adjust_rate(df_imu_cut[1]["Mat[2][0]"], max_size).flatten(),
+                "Triceps_Mat[2][1]": self.Adjust_rate(df_imu_cut[1]["Mat[2][1]"], max_size).flatten(),
+                "Triceps_Mat[2][2]": self.Adjust_rate(df_imu_cut[1]["Mat[2][2]"], max_size).flatten(),
+                "Gastrocnemious_EMG": self.Adjust_rate(self.df_emg[3].iloc[:, 1].values,max_size,emg=True).flatten(),
+                "Gastrocnemious_Mat[0][0]": self.Adjust_rate(df_imu_cut[3]["Mat[0][0]"], max_size).flatten(),
+                "Gastrocnemious_Mat[1][0]": self.Adjust_rate(df_imu_cut[3]["Mat[1][0]"], max_size).flatten(),
+                "Gastrocnemious_Mat[2][0]": self.Adjust_rate(df_imu_cut[3]["Mat[2][0]"], max_size).flatten(),
+                "Gastrocnemious_Mat[2][1]": self.Adjust_rate(df_imu_cut[3]["Mat[2][1]"], max_size).flatten(),
+                "Gastrocnemious_Mat[2][2]": self.Adjust_rate(df_imu_cut[3]["Mat[2][2]"], max_size).flatten(),
+                "Rectus_EMG": self.Adjust_rate(self.df_emg[2].iloc[:, 1].values,max_size,emg=True).flatten(),
+                "Rectus_Mat[0][0]": self.Adjust_rate(df_imu_cut[2]["Mat[0][0]"],max_size).flatten(),
+                "Rectus_Mat[1][0]": self.Adjust_rate(df_imu_cut[2]["Mat[1][0]"],max_size).flatten(),
+                "Rectus_Mat[2][0]": self.Adjust_rate(df_imu_cut[2]["Mat[2][0]"],max_size).flatten(),
+                "Rectus_Mat[2][1]": self.Adjust_rate(df_imu_cut[2]["Mat[2][1]"],max_size).flatten(),
+                "Rectus_Mat[2][2]": self.Adjust_rate(df_imu_cut[2]["Mat[2][2]"],max_size).flatten(),
             })
+            # data_dict = {
+            #     "Sample": [x / 200 for x in range(len(df_imu_cut[0]))],
+            #     "Biceps_EMG": self.Adjust_rate(self.df_emg[0].iloc[:, 1].values, max_size, emg=True).flatten(),
+            #     "Biceps_Mat[0][0]": self.Adjust_rate(df_imu_cut[0]["Mat[0][0]"], max_size).flatten(),
+            #     "Biceps_Mat[1][0]": self.Adjust_rate(df_imu_cut[0]["Mat[1][0]"], max_size).flatten(),
+            #     "Biceps_Mat[2][0]": self.Adjust_rate(df_imu_cut[0]["Mat[2][0]"], max_size).flatten(),
+            #     "Biceps_Mat[2][1]": self.Adjust_rate(df_imu_cut[0]["Mat[2][1]"], max_size).flatten(),
+            #     "Biceps_Mat[2][2]": self.Adjust_rate(df_imu_cut[0]["Mat[2][2]"], max_size).flatten(),
+            #     "Triceps_EMG": self.Adjust_rate(self.df_emg[1].iloc[:, 1].values, max_size, emg=True).flatten(),
+            #     "Triceps_Mat[0][0]": self.Adjust_rate(df_imu_cut[1]["Mat[0][0]"], max_size).flatten(),
+            #     "Triceps_Mat[1][0]": self.Adjust_rate(df_imu_cut[1]["Mat[1][0]"], max_size).flatten(),
+            #     "Triceps_Mat[2][0]": self.Adjust_rate(df_imu_cut[1]["Mat[2][0]"], max_size).flatten(),
+            #     "Triceps_Mat[2][1]": self.Adjust_rate(df_imu_cut[1]["Mat[2][1]"], max_size).flatten(),
+            #     "Triceps_Mat[2][2]": self.Adjust_rate(df_imu_cut[1]["Mat[2][2]"], max_size).flatten(),
+            #     "Gastrocnemious_EMG": self.Adjust_rate(self.df_emg[3].iloc[:, 1].values, max_size, emg=True).flatten(),
+            #     "Gastrocnemious_Mat[0][0]": self.Adjust_rate(df_imu_cut[3]["Mat[0][0]"], max_size).flatten(),
+            #     "Gastrocnemious_Mat[1][0]": self.Adjust_rate(df_imu_cut[3]["Mat[1][0]"], max_size).flatten(),
+            #     "Gastrocnemious_Mat[2][0]": self.Adjust_rate(df_imu_cut[3]["Mat[2][0]"], max_size).flatten(),
+            #     "Gastrocnemious_Mat[2][1]": self.Adjust_rate(df_imu_cut[3]["Mat[2][1]"], max_size).flatten(),
+            #     "Gastrocnemious_Mat[2][2]": self.Adjust_rate(df_imu_cut[3]["Mat[2][2]"], max_size).flatten(),
+            #     "Rectus_EMG": self.Adjust_rate(self.df_emg[2].iloc[:, 1].values, max_size, emg=True).flatten(),
+            #     "Rectus_Mat[0][0]": self.Adjust_rate(df_imu_cut[2]["Mat[0][0]"], max_size).flatten(),
+            #     "Rectus_Mat[1][0]": self.Adjust_rate(df_imu_cut[2]["Mat[1][0]"], max_size).flatten(),
+            #     "Rectus_Mat[2][0]": self.Adjust_rate(df_imu_cut[2]["Mat[2][0]"], max_size).flatten(),
+            #     "Rectus_Mat[2][1]": self.Adjust_rate(df_imu_cut[2]["Mat[2][1]"], max_size).flatten(),
+            #     "Rectus_Mat[2][2]": self.Adjust_rate(df_imu_cut[2]["Mat[2][2]"], max_size).flatten(),
+            # }
+            # for key, value in data_dict.items():
+            #     print(f"{key}: {len(value)}")
+                # print(out_df.shape)
+                # print(self.df_emg[0].shape)
 
-            # print(out_df.shape)
-            # print(self.df_emg[0].shape)
-
-            # filepath, _ = QFileDialog.getSaveFileName(
-            #         self, "Save file", "", "All Files (*);; Text Files (*.txt)"
-            #     )
+                # filepath, _ = QFileDialog.getSaveFileName(
+                #         self, "Save file", "", "All Files (*);; Text Files (*.txt)"
+                #     )
 
             filepath, _ = QFileDialog.getSaveFileName(
                 self,
@@ -342,17 +368,19 @@ class Ui(QtWidgets.QMainWindow):
         except Exception as e:
             print(e)
 
-    def Adjust_rate(self, dataframe,data_len):
+    def Adjust_rate(self, dataframe,data_len,emg=False):
         values = dataframe.tolist()
         result = []
 
         for i, value in enumerate(values):
             result.append(value)
-            result.append(value)
+            if not emg:
+                result.append(value)
 
         while data_len > len(result):
             result.append("")
 
+        result = result[:data_len]
         print(np.array(result).shape)
         return np.array(result)
 
