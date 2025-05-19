@@ -247,10 +247,10 @@ class Ui(QtWidgets.QMainWindow):
 
 
     def Update_Plot_1(self):
-        if len(self.df_emg) != 0:
-            data = self.df_imu[0].iloc[:, 9].values
-            data1 = self.df_imu[0].iloc[:, 10].values
-            data2 = self.df_imu[0].iloc[:, 11].values
+        if len(self.df_imu) != 0:
+            data = self.df_imu[0].iloc[:, 0].values
+            data1 = self.df_imu[0].iloc[:, 1].values
+            data2 = self.df_imu[0].iloc[:, 2].values
             value = self.horizontalScrollBar.value()
             value += self.sb_set_offset.value()
             offset= self.horizontalScrollBar_1.value()
@@ -259,7 +259,7 @@ class Ui(QtWidgets.QMainWindow):
             self.pltWidget.plot(data=data,data1=data1,data2=data2,min=value+offset,max=value+1000+offset,local_max=checked)
 
     def Update_Plot_2(self):
-        if len(self.df_imu) != 0:
+        if len(self.df_emg) != 0:
             data = self.df_emg[0].iloc[:, 1].values[::2]
             value = self.horizontalScrollBar_1.value()
             value +=  self.sb_set_pos.value()
