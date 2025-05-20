@@ -110,6 +110,7 @@ class Ui(QtWidgets.QMainWindow):
         self.sb_set_offset.editingFinished.connect(self.Update_Plot_1)
         self.sb_set_pos.editingFinished.connect(self.Update_Plots)
         self.cb_local_maximum.stateChanged.connect(self.Update_Plots)
+        self.cb_type.currentIndexChanged.connect(self.Update_Plot_1)
 
         self.emg_loading_finished.connect(self.finish_emg_loading)
         self.imu_loading_finished.connect(self.finish_imu_loading)
