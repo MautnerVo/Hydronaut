@@ -94,6 +94,7 @@ class Ui(QtWidgets.QMainWindow):
         self.pltWidget = self.embed_matplotlib(self.widget_2)
         self.pltWidget1 = self.embed_matplotlib(self.widget)
         self.cb_local_maximum = self.findChild(QtWidgets.QCheckBox, 'cb_local_maximum')
+        self.cb_type = self.findChild(QtWidgets.QComboBox, 'cb_type')
 
         self.horizontalScrollBar.valueChanged.connect(self.Update_Plot_1)
         self.pb_load_EMG.clicked.connect(self.emg_loader)
@@ -115,6 +116,7 @@ class Ui(QtWidgets.QMainWindow):
 
         self.df_emg = []
         self.df_imu = []
+        self.plot_dict = {"Accelerometer":[0,1,2], "Gyroscope":[3,4,5], "Magnetometer":[6,7,8],"Rotation matrix":[9,10,11],"Quaternion":[-3,-2,-1]}
         self.show()
 
     def imu_loader(self):
@@ -137,17 +139,17 @@ class Ui(QtWidgets.QMainWindow):
             success = False
             for file in os.listdir(folder_path):
                 file_path = os.path.join(folder_path, file).replace("\\", "/")
-                if os.path.isfile(file_path):
+                if os.path.isfile(file_path) and file.endswith(".csv"):
                     print("Processing file:", file)
                     try:
                         if self.df_imu[0].empty and file.startswith("b"):
-                            self.df_imu[0] = pd.read_csv(file_path, delimiter="\t", skiprows=4)
+                            self.df_imu[0] = pd.read_csv(file_path, delimiter=",")
                         elif self.df_imu[1].empty and file.startswith("t"):
-                            self.df_imu[1] = pd.read_csv(file_path, delimiter="\t", skiprows=4)
+                            self.df_imu[1] = pd.read_csv(file_path, delimiter=",")
                         elif self.df_imu[2].empty and file.startswith("g"):
-                            self.df_imu[2] = pd.read_csv(file_path, delimiter="\t", skiprows=4)
+                            self.df_imu[2] = pd.read_csv(file_path, delimiter=",")
                         elif self.df_imu[3].empty and file.startswith("r"):
-                            self.df_imu[3] = pd.read_csv(file_path, delimiter="\t", skiprows=4)
+                            self.df_imu[3] = pd.read_csv(file_path, delimiter=",")
                     except Exception as e:
                         print(f"Error reading file {file_path}: {e}")
 
@@ -247,19 +249,25 @@ class Ui(QtWidgets.QMainWindow):
 
 
     def Update_Plot_1(self):
-        if len(self.df_emg) != 0:
-            data = self.df_imu[0].iloc[:, 9].values
-            data1 = self.df_imu[0].iloc[:, 10].values
-            data2 = self.df_imu[0].iloc[:, 11].values
-            value = self.horizontalScrollBar.value()
-            value += self.sb_set_offset.value()
-            offset= self.horizontalScrollBar_1.value()
-            offset += self.sb_set_pos.value()
-            checked = self.cb_local_maximum.isChecked()
-            self.pltWidget.plot(data=data,data1=data1,data2=data2,min=value+offset,max=value+1000+offset,local_max=checked)
+        try:
+            if len(self.df_imu) != 0:
+                index = self.cb_type.currentIndex()
+                text = self.cb_type.itemText(index)
+                print(text,self.df_imu[0].shape)
 
+                data = self.df_imu[0].iloc[:, self.plot_dict[text][0]].values
+                data1 = self.df_imu[0].iloc[:, self.plot_dict[text][1]].values
+                data2 = self.df_imu[0].iloc[:, self.plot_dict[text][2]].values
+                value = self.horizontalScrollBar.value()
+                value += self.sb_set_offset.value()
+                offset= self.horizontalScrollBar_1.value()
+                offset += self.sb_set_pos.value()
+                checked = self.cb_local_maximum.isChecked()
+                self.pltWidget.plot(data=data,data1=data1,data2=data2,min=value+offset,max=value+1000+offset,local_max=checked)
+        except Exception as e:
+            print(e)
     def Update_Plot_2(self):
-        if len(self.df_imu) != 0:
+        if len(self.df_emg) != 0:
             data = self.df_emg[0].iloc[:, 1].values[::2]
             value = self.horizontalScrollBar_1.value()
             value +=  self.sb_set_pos.value()
@@ -295,29 +303,25 @@ class Ui(QtWidgets.QMainWindow):
             out_df = pd.DataFrame({
                 "Sample": [x / 200 for x in range(max_size)],
                 "Biceps_EMG": self.Adjust_rate(self.df_emg[0].iloc[:, 1].values,max_size,emg=True).flatten(),
-                "Biceps_Mat[0][0]": self.Adjust_rate(df_imu_cut[0]["Mat[0][0]"], max_size).flatten(),
-                "Biceps_Mat[1][0]": self.Adjust_rate(df_imu_cut[0]["Mat[1][0]"], max_size).flatten(),
-                "Biceps_Mat[2][0]": self.Adjust_rate(df_imu_cut[0]["Mat[2][0]"], max_size).flatten(),
-                "Biceps_Mat[2][1]": self.Adjust_rate(df_imu_cut[0]["Mat[2][1]"], max_size).flatten(),
-                "Biceps_Mat[2][2]": self.Adjust_rate(df_imu_cut[0]["Mat[2][2]"], max_size).flatten(),
+                "Biceps_Q1": self.Adjust_rate(df_imu_cut[0]["Quat_q0"], max_size).flatten(),
+                "Biceps_Q2": self.Adjust_rate(df_imu_cut[0]["Quat_q1"], max_size).flatten(),
+                "Biceps_Q3": self.Adjust_rate(df_imu_cut[0]["Quat_q2"], max_size).flatten(),
+                "Biceps_Q4": self.Adjust_rate(df_imu_cut[0]["Quat_q3"], max_size).flatten(),
                 "Triceps_EMG": self.Adjust_rate(self.df_emg[1].iloc[:, 1].values,max_size,emg=True).flatten(),
-                "Triceps_Mat[0][0]": self.Adjust_rate(df_imu_cut[1]["Mat[0][0]"], max_size).flatten(),
-                "Triceps_Mat[1][0]": self.Adjust_rate(df_imu_cut[1]["Mat[1][0]"], max_size).flatten(),
-                "Triceps_Mat[2][0]": self.Adjust_rate(df_imu_cut[1]["Mat[2][0]"], max_size).flatten(),
-                "Triceps_Mat[2][1]": self.Adjust_rate(df_imu_cut[1]["Mat[2][1]"], max_size).flatten(),
-                "Triceps_Mat[2][2]": self.Adjust_rate(df_imu_cut[1]["Mat[2][2]"], max_size).flatten(),
+                "Triceps_Q1": self.Adjust_rate(df_imu_cut[1]["Quat_q0"], max_size).flatten(),
+                "Triceps_Q2": self.Adjust_rate(df_imu_cut[1]["Quat_q1"], max_size).flatten(),
+                "Triceps_Q3": self.Adjust_rate(df_imu_cut[1]["Quat_q2"], max_size).flatten(),
+                "Triceps_Q4": self.Adjust_rate(df_imu_cut[1]["Quat_q3"], max_size).flatten(),
                 "Gastrocnemious_EMG": self.Adjust_rate(self.df_emg[3].iloc[:, 1].values,max_size,emg=True).flatten(),
-                "Gastrocnemious_Mat[0][0]": self.Adjust_rate(df_imu_cut[3]["Mat[0][0]"], max_size).flatten(),
-                "Gastrocnemious_Mat[1][0]": self.Adjust_rate(df_imu_cut[3]["Mat[1][0]"], max_size).flatten(),
-                "Gastrocnemious_Mat[2][0]": self.Adjust_rate(df_imu_cut[3]["Mat[2][0]"], max_size).flatten(),
-                "Gastrocnemious_Mat[2][1]": self.Adjust_rate(df_imu_cut[3]["Mat[2][1]"], max_size).flatten(),
-                "Gastrocnemious_Mat[2][2]": self.Adjust_rate(df_imu_cut[3]["Mat[2][2]"], max_size).flatten(),
+                "Gastrocnemious_Q1": self.Adjust_rate(df_imu_cut[3]["Quat_q0"], max_size).flatten(),
+                "Gastrocnemious_Q2": self.Adjust_rate(df_imu_cut[3]["Quat_q1"], max_size).flatten(),
+                "Gastrocnemious_Q3": self.Adjust_rate(df_imu_cut[3]["Quat_q2"], max_size).flatten(),
+                "Gastrocnemious_Q4": self.Adjust_rate(df_imu_cut[3]["Quat_q3"], max_size).flatten(),
                 "Rectus_EMG": self.Adjust_rate(self.df_emg[2].iloc[:, 1].values,max_size,emg=True).flatten(),
-                "Rectus_Mat[0][0]": self.Adjust_rate(df_imu_cut[2]["Mat[0][0]"],max_size).flatten(),
-                "Rectus_Mat[1][0]": self.Adjust_rate(df_imu_cut[2]["Mat[1][0]"],max_size).flatten(),
-                "Rectus_Mat[2][0]": self.Adjust_rate(df_imu_cut[2]["Mat[2][0]"],max_size).flatten(),
-                "Rectus_Mat[2][1]": self.Adjust_rate(df_imu_cut[2]["Mat[2][1]"],max_size).flatten(),
-                "Rectus_Mat[2][2]": self.Adjust_rate(df_imu_cut[2]["Mat[2][2]"],max_size).flatten(),
+                "Rectus_Q1": self.Adjust_rate(df_imu_cut[2]["Quat_q0"],max_size).flatten(),
+                "Rectus_Q2": self.Adjust_rate(df_imu_cut[2]["Quat_q1"],max_size).flatten(),
+                "Rectus_Q3": self.Adjust_rate(df_imu_cut[2]["Quat_q2"],max_size).flatten(),
+                "Rectus_Q4": self.Adjust_rate(df_imu_cut[2]["Quat_q3"],max_size).flatten(),
             })
             # data_dict = {
             #     "Sample": [x / 200 for x in range(len(df_imu_cut[0]))],
