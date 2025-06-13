@@ -51,7 +51,7 @@ bool_dict = {"ano":1,
 
 import pandas as pd
 import os
-file = r"Y:\Datasets\Fyzio\2025-03-07\1\1_hodnoceni.xlsx"
+file = r"Y:\Datasets\Fyzio\2025-03-07\2\2_hodnoceni.xlsx"
 
 df = pd.read_excel(file,header=None)
 
