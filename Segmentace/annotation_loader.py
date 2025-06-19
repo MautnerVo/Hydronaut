@@ -1,7 +1,6 @@
 import os
-import numpy as np
 import pandas as pd
-
+import numpy as np
 def to_num(x):
     """
     Převede vstupní hodnotu na float, nahradí českou čárku tečkou.
@@ -63,15 +62,13 @@ def process_file(filepath):
     if not annot:
         print("Žádné validní anotace nenalezeny.")
     else:
-        filtered_annot = {k: v for k, v in annot.items() if not (np.isnan(v['begin']) or np.isnan(v['end']))}
-        return filtered_annot
-        # for act, times in filtered_annot.items():
-        #     if not pd.isna(times['begin']) and not pd.isna(times['end']):
-        #         print(f"annot['{act}']['begin'] = {times['begin']}")
-        #         print(f"annot['{act}']['end']   = {times['end']}")
+        filtered_annot = {k: v for k, v in annot.items() if not (np.isnan(v['begin']) and not np.isnan(v['end']))}
+        for act, times in filtered_annot.items():
+            print(f"annot['{act}']['begin'] = {times['begin']}")
+            print(f"annot['{act}']['end']   = {times['end']}")
 
 if __name__ == '__main__':
-    root_dir = r'E:\Datasets\Fyzio'
+    root_dir = 'Y:\Datasets\Fyzio'
 
     for dirpath, dirnames, filenames in os.walk(root_dir):
         for fname in filenames:
