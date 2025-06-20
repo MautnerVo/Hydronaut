@@ -20,8 +20,8 @@ from annotation_loader import process_file
 #
 # print(df_data.xs("BLOCK 2: Dynamic warm-up", level="Block", axis=1))
 
-folder = r"E:\Datasets\Fyzio"
-annotation = "EMG_anotace_2.xlsx"
+folder = r"C:\Users\vojtu\Dataset\Fyzio\3"
+annotation = "EMG_anotace_3.xlsx"
 signals = "Emg_Imu.csv"
 os.makedirs("exercises_signals", exist_ok=True)
 output = process_file(os.path.join(folder,annotation))
@@ -29,8 +29,7 @@ output = process_file(os.path.join(folder,annotation))
 df = pd.read_csv(os.path.join(folder,signals))
 
 for exercise,row in output.items():
-    start_idx = df[df["Sample"] == row['begin']].index[0]
-    end_idx = df[df["Sample"] == row['end']].index[0]
+    print(exercise)
     sub_df = df[(df["Sample"] >= row['begin']) & (df["Sample"] <= row['end'])]
     # print(df[df["Sample"] == row['begin']].index[0],row['begin'],df.iloc[df[df["Sample"] == row['begin']].index,0])
     # print(df[df["Sample"] == row['end']].index[0],row['end'],df.iloc[df[df["Sample"] == row['end']].index,0])

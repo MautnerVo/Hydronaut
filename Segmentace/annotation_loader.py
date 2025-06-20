@@ -62,10 +62,11 @@ def process_file(filepath):
     if not annot:
         print("Žádné validní anotace nenalezeny.")
     else:
-        filtered_annot = {k: v for k, v in annot.items() if not (np.isnan(v['begin']) and not np.isnan(v['end']))}
+        filtered_annot = {k: v for k, v in annot.items() if not np.isnan(v['begin']) and not np.isnan(v['end'])}
         for act, times in filtered_annot.items():
             print(f"annot['{act}']['begin'] = {times['begin']}")
             print(f"annot['{act}']['end']   = {times['end']}")
+        return  filtered_annot
 
 if __name__ == '__main__':
     root_dir = 'Y:\Datasets\Fyzio'

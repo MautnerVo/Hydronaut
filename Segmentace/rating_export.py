@@ -51,9 +51,11 @@ bool_dict = {"ano":1,
 
 import pandas as pd
 import os
-file = r"Y:\Datasets\Fyzio\2025-03-07\2\2_hodnoceni.xlsx"
+folder = r"C:\Users\vojtu\Dataset\Fyzio\3"
+file = r"3_hodnoceni.xlsx"
+path = os.path.join(folder, file)
 
-df = pd.read_excel(file,header=None)
+df = pd.read_excel(path,header=None)
 
 ended = True
 
@@ -93,7 +95,8 @@ for index,table in enumerate(tables):
 for index,exercise in enumerate(data):
     df_out = pd.DataFrame.from_records(exercise)
     os.makedirs("exercises",exist_ok=True)
-    df_out.to_csv(f"exercises/{df.iloc[tables[index][0],1]}_{index}.csv",index=False,header=False)
+    name = str(df.iloc[tables[index][0], 1]).strip().capitalize()
+    df_out.to_csv(f"exercises/{name}.csv",index=False,header=False)
 
 
 # print(df.iloc[tables[0][1],3])
