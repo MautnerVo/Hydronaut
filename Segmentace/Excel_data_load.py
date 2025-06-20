@@ -20,8 +20,8 @@ from annotation_loader import process_file
 #
 # print(df_data.xs("BLOCK 2: Dynamic warm-up", level="Block", axis=1))
 
-folder = r"C:\Users\vojtu\Dataset\Fyzio\3"
-annotation = "EMG_anotace_3.xlsx"
+folder = r"Y:\Datasets\Fyzio\2025-03-07\2"
+annotation = "EMG_anotace_2.xlsx"
 signals = "Emg_Imu.csv"
 os.makedirs("exercises_signals", exist_ok=True)
 output = process_file(os.path.join(folder,annotation))
@@ -29,8 +29,5 @@ output = process_file(os.path.join(folder,annotation))
 df = pd.read_csv(os.path.join(folder,signals))
 
 for exercise,row in output.items():
-    print(exercise)
     sub_df = df[(df["Sample"] >= row['begin']) & (df["Sample"] <= row['end'])]
-    # print(df[df["Sample"] == row['begin']].index[0],row['begin'],df.iloc[df[df["Sample"] == row['begin']].index,0])
-    # print(df[df["Sample"] == row['end']].index[0],row['end'],df.iloc[df[df["Sample"] == row['end']].index,0])
     sub_df.to_csv(rf"exercises_signals/{exercise}.csv", index=False)

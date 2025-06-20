@@ -360,6 +360,54 @@ class Ui(QtWidgets.QMainWindow):
                 #         self, "Save file", "", "All Files (*);; Text Files (*.txt)"
                 #     )
 
+            biceps_quat_raw = np.stack([
+                out_df["Biceps_Q1"].values,
+                out_df["Biceps_Q2"].values,
+                out_df["Biceps_Q3"].values,
+                out_df["Biceps_Q4"].values
+            ], axis=1)
+            biceps_quat = self.correct_quaternion_sign_flips(biceps_quat_raw)
+            out_df["Biceps_Q1"] = biceps_quat[:, 0]
+            out_df["Biceps_Q2"] = biceps_quat[:, 1]
+            out_df["Biceps_Q3"] = biceps_quat[:, 2]
+            out_df["Biceps_Q4"] = biceps_quat[:, 3]
+
+            triceps_quat_raw = np.stack([
+                out_df["Triceps_Q1"].values,
+                out_df["Triceps_Q2"].values,
+                out_df["Triceps_Q3"].values,
+                out_df["Triceps_Q4"].values
+            ], axis=1)
+            triceps_quat = self.correct_quaternion_sign_flips(triceps_quat_raw)
+            out_df["Triceps_Q1"] = triceps_quat[:, 0]
+            out_df["Triceps_Q2"] = triceps_quat[:, 1]
+            out_df["Triceps_Q3"] = triceps_quat[:, 2]
+            out_df["Triceps_Q4"] = triceps_quat[:, 3]
+
+            gastrocnemious_quat_raw = np.stack([
+                out_df["Gastrocnemious_Q1"].values,
+                out_df["Gastrocnemious_Q2"].values,
+                out_df["Gastrocnemious_Q3"].values,
+                out_df["Gastrocnemious_Q4"].values
+            ], axis=1)
+            gastrocnemious_quat = self.correct_quaternion_sign_flips(gastrocnemious_quat_raw)
+            out_df["Gastrocnemious_Q1"] = gastrocnemious_quat[:, 0]
+            out_df["Gastrocnemious_Q2"] = gastrocnemious_quat[:, 1]
+            out_df["Gastrocnemious_Q3"] = gastrocnemious_quat[:, 2]
+            out_df["Gastrocnemious_Q4"] = gastrocnemious_quat[:, 3]
+
+            rectus_quat_raw = np.stack([
+                out_df["Rectus_Q1"].values,
+                out_df["Rectus_Q2"].values,
+                out_df["Rectus_Q3"].values,
+                out_df["Rectus_Q4"].values
+            ], axis=1)
+            rectus_quat = self.correct_quaternion_sign_flips(rectus_quat_raw)
+            out_df["Rectus_Q1"] = rectus_quat[:, 0]
+            out_df["Rectus_Q2"] = rectus_quat[:, 1]
+            out_df["Rectus_Q3"] = rectus_quat[:, 2]
+            out_df["Rectus_Q4"] = rectus_quat[:, 3]
+
             filepath, _ = QFileDialog.getSaveFileName(
                 self,
                 "Save file",
@@ -369,7 +417,7 @@ class Ui(QtWidgets.QMainWindow):
 
             if filepath != "":
                 out_df.to_csv(filepath, index=False)
-
+            print("done")
         except Exception as e:
             print(e)
 
@@ -383,11 +431,19 @@ class Ui(QtWidgets.QMainWindow):
                 result.append(value)
 
         while data_len > len(result):
-            result.append("")
+            result.append(np.nan)
 
         result = result[:data_len]
         print(np.array(result).shape)
         return np.array(result)
+
+    def correct_quaternion_sign_flips(self, quaternions, threshold=-0.5):
+        corrected = np.copy(quaternions)
+        for i in range(1, len(corrected)):
+            if np.dot(corrected[i], corrected[i - 1]) < threshold:
+                corrected[i] = -corrected[i]
+        return corrected
+
 
 app = QtWidgets.QApplication(sys.argv)
 window = Ui()

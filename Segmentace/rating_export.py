@@ -47,12 +47,34 @@ cz_to_en = {
 }
 bool_dict = {"ano":1,
              "ne":0}
+exercise = {
+    "SQUAT": "Standard squat",
+    "SQUAT - hold": "Squat hold",
+    "WIDE SQUAT": "Wide squat",
+    "WIDE SQUAT - hold": "Wide squat hold",
+    "LUNGE": "Lunge",
+    "LUNGE - hold": "Lunge hold",
+    "BRIDGING": "Bridging",
+    "BRIDGING - hold": "Bridging hold",
+    "PUSH-UP": "Push-ups",
+    "FOREARM PLANK": "Forearm plank hold",
+    "TRICEPS PUSH-UP": "Triceps push-ups",
+    "EXT. ARM PLANK": "Extended arm plank hold",
+    "SUPERMAN": "Superman",
+    "SUPERMAN hold": "Superman hold",
+    "SIDE PLANK ROT.": "Side plank rotation",
+    "SIDE PLANK hold": "Side plank hold",
+    "BURPEES": "Burpees",
+    "PLANK WALKOUT": "Plank walkout",
+    "JUMP SQUAT": "Jump squats",
+    "MOUNTAIN CLIMBERS": "Mountain climbers"
+}
 
 
 import pandas as pd
 import os
-folder = r"C:\Users\vojtu\Dataset\Fyzio\3"
-file = r"3_hodnoceni.xlsx"
+folder = r"Y:\Datasets\Fyzio\2025-03-07\2"
+file = r"2_hodnoceni.xlsx"
 path = os.path.join(folder, file)
 
 df = pd.read_excel(path,header=None)
@@ -92,11 +114,12 @@ for index,table in enumerate(tables):
     sub_data[1].append(sub_df.iloc[-1,-1])
     data.append(sub_data)
 
-for index,exercise in enumerate(data):
-    df_out = pd.DataFrame.from_records(exercise)
-    os.makedirs("exercises",exist_ok=True)
-    name = str(df.iloc[tables[index][0], 1]).strip().capitalize()
-    df_out.to_csv(f"exercises/{name}.csv",index=False,header=False)
+for index, ex_data in enumerate(data):
+    df_out = pd.DataFrame.from_records(ex_data)
+    os.makedirs("exercises", exist_ok=True)
+    name = str(df.iloc[tables[index][0], 1]).strip()
+    df_out.to_csv(f"exercises/{exercise[name]}.csv", index=False, header=False)
+
 
 
 # print(df.iloc[tables[0][1],3])
