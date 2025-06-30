@@ -46,15 +46,16 @@ cz_to_en = {
     'úhel kyčlí': 'hip_joint_angle'
 }
 bool_dict = {"ano":1,
-             "ne":0}
-exercise = {
+             "ne":0,
+             "an":1}
+exercise_map = {
     "SQUAT": "Standard squat",
     "SQUAT - hold": "Squat hold",
     "WIDE SQUAT": "Wide squat",
     "WIDE SQUAT - hold": "Wide squat hold",
     "LUNGE": "Lunge",
     "LUNGE - hold": "Lunge hold",
-    "BRIDGING": "Bridging",
+    "BRIDGING": "Bridging (lying on back)",
     "BRIDGING - hold": "Bridging hold",
     "PUSH-UP": "Push-ups",
     "FOREARM PLANK": "Forearm plank hold",
@@ -69,12 +70,32 @@ exercise = {
     "JUMP SQUAT": "Jump squats",
     "MOUNTAIN CLIMBERS": "Mountain climbers"
 }
-
+exercise_variant_map = {
+    "LUNGE": {
+        "left": "Lunge (left leg forward)",
+        "right": "Lunge (right leg forward)"
+    },
+    "LUNGE - hold": {
+        "left": "Lunge hold (left leg)",
+        "right": "Lunge hold (right leg)"
+    },
+    "SIDE PLANK ROT.": {
+        "left": "Side plank rot.(L side)",
+        "right": "Side plank rot.(R side)"
+    },
+    "SIDE PLANK hold": {
+        "left": "Side plank hold",
+        "right": "Side plank hold (R side)"
+    }
+}
 
 import pandas as pd
 import os
-folder = r"Y:\Datasets\Fyzio\2025-03-07\2"
-file = r"2_hodnoceni.xlsx"
+
+number = 20
+
+folder = fr"Y:\Datasets\Fyzio\2025-03-28\{number}"
+file = fr"{number}_hodnoceni.xlsx"
 path = os.path.join(folder, file)
 
 df = pd.read_excel(path,header=None)
@@ -100,25 +121,54 @@ for index,B in enumerate(df.iloc[5:,1],start=5):
 
 
 data = []
-for index,table in enumerate(tables):
+for index, table in enumerate(tables):
     krit = False
-    sub_df = df.iloc[table[0]:table[1],1:table[2]]
-    sub_data = [[],[]]
-    for index,col in enumerate(sub_df.iloc[:,0]):
-        if krit and not pd.isna(col):
-            sub_data[0].append(cz_to_en[col.rstrip()])
-            sub_data[1].append(bool_dict[sub_df.iloc[index,-1]])
-        if col == "kritérium":
-            krit = True
-    sub_data[0].append("overall quality")
-    sub_data[1].append(sub_df.iloc[-1,-1])
-    data.append(sub_data)
+    sub_df = df.iloc[table[0]:table[1], 1:table[2]]
+    coll = table[2]
+
+    name = str(df.iloc[table[0], 1]).strip()
+    os.makedirs("exercises", exist_ok=True)
+
+    if coll == 5:
+        for side, col_idx in zip(["left", "right"], [-2, -1]):
+            sub_data = [[], []]
+            krit = False
+            for row_idx, col in enumerate(sub_df.iloc[:, 0]):
+                if krit and not pd.isna(col):
+                    sub_data[0].append(cz_to_en[col.rstrip()])
+                    sub_data[1].append(bool_dict[sub_df.iloc[row_idx, col_idx]])
+                if col == "kritérium":
+                    krit = True
+            sub_data[0].append("overall quality")
+            sub_data[1].append(sub_df.iloc[-1, col_idx])
+            df_out = pd.DataFrame.from_records(sub_data)
+
+            # název souboru
+            if name in exercise_variant_map and side in exercise_variant_map[name]:
+                filename = exercise_variant_map[name][side]
+            else:
+                filename = f"{exercise_map[name]}_{side}"
+
+            df_out.to_csv(f"exercises/{filename}.csv", index=False, header=False)
+    else:
+        sub_data = [[], []]
+        krit = False
+        for row_idx, col in enumerate(sub_df.iloc[:, 0]):
+            if krit and not pd.isna(col):
+                sub_data[0].append(cz_to_en[col.rstrip()])
+                sub_data[1].append(bool_dict[sub_df.iloc[row_idx, -1]])
+            if col == "kritérium":
+                krit = True
+        sub_data[0].append("overall quality")
+        sub_data[1].append(sub_df.iloc[-1, -1])
+        df_out = pd.DataFrame.from_records(sub_data)
+        df_out.to_csv(f"exercises/{exercise_map[name]}.csv", index=False, header=False)
 
 for index, ex_data in enumerate(data):
     df_out = pd.DataFrame.from_records(ex_data)
     os.makedirs("exercises", exist_ok=True)
     name = str(df.iloc[tables[index][0], 1]).strip()
-    df_out.to_csv(f"exercises/{exercise[name]}.csv", index=False, header=False)
+    df_out.to_csv(f"exercises/{exercise_map[name]}.csv", index=False, header=False)
 
 
 

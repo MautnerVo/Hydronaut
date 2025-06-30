@@ -20,8 +20,10 @@ from annotation_loader import process_file
 #
 # print(df_data.xs("BLOCK 2: Dynamic warm-up", level="Block", axis=1))
 
-folder = r"Y:\Datasets\Fyzio\2025-03-07\2"
-annotation = "EMG_anotace_2.xlsx"
+
+number = 20
+folder = fr"Y:\Datasets\Fyzio\2025-03-28\{number}"
+annotation = f"EMG_anotace_{number}.xlsx"
 signals = "Emg_Imu.csv"
 os.makedirs("exercises_signals", exist_ok=True)
 output = process_file(os.path.join(folder,annotation))
