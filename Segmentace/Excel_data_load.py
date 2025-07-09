@@ -1,3 +1,7 @@
+"""
+Segmentace signálů podle anotací
+"""
+
 import pandas as pd
 import os
 from annotation_loader import process_file

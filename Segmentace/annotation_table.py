@@ -1,3 +1,8 @@
+"""
+Vytvoření tabulky anotací
+"""
+
+
 import pandas as pd
 import os
 from collections import Counter

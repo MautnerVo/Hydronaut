@@ -89,8 +89,14 @@ exercise_variant_map = {
     }
 }
 
+"""
+Vytvoření anotací z excel souboru
+"""
+
 import pandas as pd
 import os
+
+
 
 number = 20
 
