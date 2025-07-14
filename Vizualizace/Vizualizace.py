@@ -1,3 +1,8 @@
+"""
+Vizualizační aplikace pro spojení EMG a IMU signálů
+"""
+
+
 import sys
 import threading
 from PyQt5 import QtWidgets, uic
