@@ -21,7 +21,7 @@ def custom_highpass(signal, cutoff=10, fs=200, order=4):
     return filtered
 
 
-def EnvelopeEMG(dataframe, full=False):
+def envelope_emg(dataframe, full=False):
     """
 
     :param full: true | false vrací všechny signály | vrací pouze obálku emg signálu
