@@ -98,9 +98,9 @@ import os
 
 
 
-number = 20
+number = 13
+folder = fr"Y:\Datasets\Fyzio\2025-03-21\{number}"
 
-folder = fr"Y:\Datasets\Fyzio\2025-03-28\{number}"
 file = fr"{number}_hodnoceni.xlsx"
 path = os.path.join(folder, file)
 
