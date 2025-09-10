@@ -61,14 +61,14 @@ class Net(nn.Module):
         return out
 
 
-class Model_interface():
+class ModelInterface:
     def __init__(self,model_path = r"models/cnn_model_3.pth"):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.model = Net().to(device=self.device)
         self.model.load_state_dict(torch.load(model_path))
         self.log_mask = [0,5,10,15]
         self.model.eval()
-        self.target_shape = (1,20,200)
+        self.target_shape = (1,20,200) # [sample, kanaly, okno]
 
     def predict(self,sample):
         """
@@ -115,7 +115,7 @@ if __name__ == "__main__":
         y = np.array(pickle.load(f))
 
     start = time.time()
-    model = Model_interface()
+    model = ModelInterface()
     for i in range(100):
         output = model.predict(x[i])
         print(output, y[i])
