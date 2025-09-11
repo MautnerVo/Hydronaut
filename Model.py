@@ -118,6 +118,6 @@ if __name__ == "__main__":
     model = ModelInterface()
     for i in range(100):
         output = model.predict(x[i])
-        print(output, y[i])
+        print(output, y[i], np.abs(output-y[i]))
     time_end = time.time()
     print(time_end - start)
