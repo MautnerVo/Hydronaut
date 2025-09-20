@@ -24,16 +24,31 @@ from annotation_loader import process_file
 #
 # print(df_data.xs("BLOCK 2: Dynamic warm-up", level="Block", axis=1))
 
+transitions = ["Standard squat","Squat hold","Wide squat","Wide squat hold","Lunge (left leg forward)","Lunge hold (left leg)","Lunge (right leg forward)","Lunge hold (right leg)"]
 
-number = 13
-folder = fr"Y:\Datasets\Fyzio\2025-03-21\{number}"
-annotation = f"EMG_anotace_{number}.xlsx"
-signals = "Emg_Imu.csv"
-os.makedirs("exercises_signals", exist_ok=True)
-output = process_file(os.path.join(folder,annotation))
 
-df = pd.read_csv(os.path.join(folder,signals))
+for dirpath, dirnames, filenames in os.walk(r"Y:\Datasets\Fyzio"):
+    if "Emg_Imu.csv" in os.listdir(dirpath):
+        folder = dirpath
+        folder_split = folder.split("\\")
+        annotation = f"EMG_anotace_{folder_split[-1]}.xlsx"
+        signals = "Emg_Imu.csv"
+        # exercises_dir = os.path.join(folder,"exercises_signals")
+        # os.makedirs(exercises_dir, exist_ok=True)
+        transition_dir = os.path.join(folder,"transition")
+        os.makedirs(transition_dir, exist_ok=True)
+        output = process_file(os.path.join(folder,annotation))
 
-for exercise,row in output.items():
-    sub_df = df[(df["Sample"] >= row['begin']) & (df["Sample"] <= row['end'])]
-    sub_df.to_csv(rf"exercises_signals/{exercise}.csv", index=False)
+
+        df = pd.read_csv(os.path.join(folder,signals))
+
+
+        # for exercise,row in output.items():
+        #     sub_df = df[(df["Sample"] >= row['begin']) & (df["Sample"] <= row['end'])]
+        #     sub_df.to_csv(rf"exercises_signals/{exercise}.csv", index=False)
+        try:
+            for i in range(len(transitions)-1):
+                sub_df = df[(df["Sample"] >= output[transitions[i]]['end']+2) & (df["Sample"] <= output[transitions[i+1]]['begin']-2)]
+                sub_df.to_csv(os.path.join(transition_dir,f"{transitions[i]}_transitions.csv"), index=False)
+        except Exception as e:
+            print(e)

@@ -83,7 +83,7 @@ class ModelInterface:
 
         sample = torch.tensor(sample, dtype=torch.float32).unsqueeze(0).to(device=self.device)
         if sample.shape != self.target_shape:
-            if x.shape[1] * x.shape[2] == self.target_shape[1] * self.target_shape[2]:
+            if sample.shape[1] * sample.shape[2] == self.target_shape[1] * self.target_shape[2]:
                 sample = sample.permute(0,2,1)
             else:
                 raise Exception("Sample must have shape (1,20,200)")
