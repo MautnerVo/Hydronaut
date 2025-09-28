@@ -54,7 +54,7 @@ for dirpath, dirnames, filenames in os.walk(r"Y:\Datasets\Fyzio"):
             for file in os.listdir(sub_path):
                 file_name = os.path.splitext(file)[0]
                 if file_name in data_X or dir == "transitions_envelope_phase":
-                    step_size = 50 if dir == "transitions_envelope_phase" else 5
+                    step_size = 25 if dir == "transitions_envelope_phase" else 5
                     df = pd.read_csv(os.path.join(sub_path,file))
                     signal_length = len(df)
 
@@ -62,9 +62,11 @@ for dirpath, dirnames, filenames in os.walk(r"Y:\Datasets\Fyzio"):
                         end = start + window_size
                         segment_X = df.loc[start:end-1,channels].to_numpy()
                         segment_Y = df.loc[end-1,["Exercise_Phase"]]
-
-                        data_X[fname].append(segment_X)
-                        data_Y[fname].append(segment_Y)
+                        if np.isnan(segment_X).any():
+                            print(file_name,start,end)
+                        else:
+                            data_X[fname].append(segment_X)
+                            data_Y[fname].append(segment_Y)
 
 os.makedirs(os.path.join(save_path,save_dir_X),exist_ok=True)
 os.makedirs(os.path.join(save_path,save_dir_Y),exist_ok=True)

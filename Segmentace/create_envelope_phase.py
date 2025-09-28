@@ -48,7 +48,7 @@ def show_graph():
 
 for dirpath, dirnames, filenames in os.walk(PATH):
     for dir in dirnames:
-        if(dir == "exercises_signals__"):
+        if(dir == "exercises_signals"):
             path = os.path.join(dirpath,new_dir)
             path_envelopes = os.path.join(dirpath,new_dir_envelopes)
             os.makedirs(path,exist_ok=True)
