@@ -13,6 +13,7 @@ from scipy.fft import fft, fftfreq
 PATH = r"Y:\Datasets\Fyzio"
 new_dir = "signals_envelope_phase"
 new_dir_envelopes = "signals_envelope"
+transitions_dir = "transitions_envelope_phase"
 
 sorted_collumns = ["Sample","Biceps_EMG","Biceps_EMG_Envelope","Biceps_Q1","Biceps_Q2","Biceps_Q3","Biceps_Q4",
                    "Triceps_EMG","Triceps_EMG_Envelope","Triceps_Q1","Triceps_Q2","Triceps_Q3","Triceps_Q4",
@@ -47,7 +48,7 @@ def show_graph():
 
 for dirpath, dirnames, filenames in os.walk(PATH):
     for dir in dirnames:
-        if(dir == "exercises_signals"):
+        if(dir == "exercises_signals__"):
             path = os.path.join(dirpath,new_dir)
             path_envelopes = os.path.join(dirpath,new_dir_envelopes)
             os.makedirs(path,exist_ok=True)
@@ -83,4 +84,20 @@ for dirpath, dirnames, filenames in os.walk(PATH):
                     except Exception as e:
                         print(e)
                         print(file)
+        elif(dir == "transition"):
+            path = os.path.join(dirpath,transitions_dir)
+            os.makedirs(path,exist_ok=True)
+            for file in os.listdir(os.path.join(dirpath,dir)):
+                file_name = os.path.splitext(file)[0]
+                df = pd.read_csv(os.path.join(dirpath,dir,file))
+                if df.shape[0] > 15:
+                    envelope = envelope_emg(df)
+                    df['Biceps_EMG_Envelope'] = envelope[0]
+                    df['Triceps_EMG_Envelope'] = envelope[1]
+                    df['Rectus_EMG_Envelope'] = envelope[2]
+                    df['Gastrocnemious_EMG_Envelope'] = envelope[3]
+                    df = df[sorted_collumns]
+                    df["Exercise_Phase"] = 0
+
+                    df.to_csv(os.path.join(path, file), index=False)
 

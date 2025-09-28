@@ -44,43 +44,38 @@ data_Y = {key: [] for key in data_X}
 
 path = r"Y:\Datasets\Fyzio\signals_envelope_phase"
 save_path = r"Y:\Datasets\Fyzio"
-save_dir_X = "X_train"
-save_dir_Y = "Y_train"
+save_dir_X = "X_train_w_transition"
+save_dir_Y = "Y_train_w_transition"
+fname = "Wide squat"
 for dirpath, dirnames, filenames in os.walk(r"Y:\Datasets\Fyzio"):
     for dir in dirnames:
-        if dir == "signals_envelope_phase":
+        if dir == "signals_envelope_phase" or dir == "transitions_envelope_phase":
             sub_path = os.path.join(dirpath,dir)
             for file in os.listdir(sub_path):
                 file_name = os.path.splitext(file)[0]
-                df = pd.read_csv(os.path.join(sub_path,file))
-                signal_length = len(df)
-                # if len(validation_X)  == 0:
-                #     for start in range(0, signal_length - window_size + 1, 1):
-                #         end = start + window_size
-                #         segment_X = df.loc[start:end-1,channels].to_numpy()
-                #         segment_Y = df.loc[end-1,["Exercise_Phase"]]
-                #         validation_X.append(segment_X)
-                #         validation_Y.append(segment_Y)
-                for start in range(0, signal_length - window_size + 1, step_size):
-                    end = start + window_size
-                    segment_X = df.loc[start:end-1,channels].to_numpy()
-                    segment_Y = df.loc[end-1,["Exercise_Phase"]]
-                    if file_name in data_X:
-                        data_X[file_name].append(segment_X)
-                        data_Y[file_name].append(segment_Y)
+                if file_name in data_X or dir == "transitions_envelope_phase":
+                    step_size = 50 if dir == "transitions_envelope_phase" else 5
+                    df = pd.read_csv(os.path.join(sub_path,file))
+                    signal_length = len(df)
 
+                    for start in range(0, signal_length - window_size + 1, step_size):
+                        end = start + window_size
+                        segment_X = df.loc[start:end-1,channels].to_numpy()
+                        segment_Y = df.loc[end-1,["Exercise_Phase"]]
+
+                        data_X[fname].append(segment_X)
+                        data_Y[fname].append(segment_Y)
 
 os.makedirs(os.path.join(save_path,save_dir_X),exist_ok=True)
 os.makedirs(os.path.join(save_path,save_dir_Y),exist_ok=True)
 
-# with open(os.path.join(save_path,save_dir_X,"validation_X.pkl"),"wb") as f:
-#     pickle.dump(validation_X,f)
-#
-# with open(os.path.join(save_path,save_dir_Y,"validation_Y.pkl"),"wb") as f:
-#     pickle.dump(validation_Y,f)
+x = np.array(data_X[fname].copy())
+x = x.reshape(-1,20)
 
-plt.plot(validation_Y)
-plt.show()
+df = pd.DataFrame(x)
+df.to_csv("X.csv",index=False)
+df = pd.DataFrame(data_Y["Wide squat"])
+df.to_csv("Y.csv",index=False)
 
 for X_key, _ in data_X.items():
     with open(os.path.join(save_path,save_dir_X,X_key+".pkl"),"wb") as f:
