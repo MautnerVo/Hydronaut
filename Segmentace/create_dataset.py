@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import pickle
 import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
 
 Fs = 200
 window_size = 200
@@ -44,8 +45,8 @@ data_Y = {key: [] for key in data_X}
 
 path = r"Y:\Datasets\Fyzio\signals_envelope_phase"
 save_path = r"Y:\Datasets\Fyzio"
-save_dir_X = "X_train_w_transition"
-save_dir_Y = "Y_train_w_transition"
+save_dir_X = "X_train_w_augmentation"
+save_dir_Y = "Y_train_w_augmentation"
 fname = "Wide squat"
 for dirpath, dirnames, filenames in os.walk(r"Y:\Datasets\Fyzio"):
     for dir in dirnames:
@@ -55,10 +56,36 @@ for dirpath, dirnames, filenames in os.walk(r"Y:\Datasets\Fyzio"):
                 file_name = os.path.splitext(file)[0]
                 if file_name in data_X or dir == "transitions_envelope_phase":
                     step_size = 25 if dir == "transitions_envelope_phase" else 5
-                    df = pd.read_csv(os.path.join(sub_path,file))
+                    try:
+                        df = pd.read_csv(os.path.join(sub_path,file))
+                    except Exception as e:
+                        print(e)
+                        print(sub_path,file)
+                        continue
                     signal_length = len(df)
 
                     for start in range(0, signal_length - window_size + 1, step_size):
+                        if np.random.rand() < 0.33:
+                            end = start + window_size // 2
+                            segment_X = df.loc[start:end-1,channels]
+                            segment_Y = df.loc[end-1,["Exercise_Phase"]]
+                            segment_x_interp = []
+                            for channel in segment_X.T.values:
+                                def_length = len(channel)
+                                x_old = np.linspace(0, 1, def_length)
+                                x_new = np.linspace(0, 1, window_size)
+                                f = interp1d(x_old, channel, kind="linear")
+                                segment_x_interp.append(f(x_new))
+                            segment_x_interp = np.array(segment_x_interp).T
+                            segment_X = segment_x_interp
+                            # plt.plot(segment_X)
+                            # plt.show()
+                            if np.isnan(segment_X).any():
+                                print(file_name, start, end)
+                            else:
+                                data_X[fname].append(segment_X)
+                                data_Y[fname].append(segment_Y)
+
                         end = start + window_size
                         segment_X = df.loc[start:end-1,channels].to_numpy()
                         segment_Y = df.loc[end-1,["Exercise_Phase"]]
@@ -67,6 +94,7 @@ for dirpath, dirnames, filenames in os.walk(r"Y:\Datasets\Fyzio"):
                         else:
                             data_X[fname].append(segment_X)
                             data_Y[fname].append(segment_Y)
+                        print(segment_X.shape)
 
 os.makedirs(os.path.join(save_path,save_dir_X),exist_ok=True)
 os.makedirs(os.path.join(save_path,save_dir_Y),exist_ok=True)
