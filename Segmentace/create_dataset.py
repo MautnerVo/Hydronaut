@@ -59,13 +59,13 @@ for dirpath, dirnames, filenames in os.walk(r"Y:\Datasets\Fyzio"):
                     try:
                         df = pd.read_csv(os.path.join(sub_path,file))
                     except Exception as e:
-                        print(e)
-                        print(sub_path,file)
+                        # print(e)
+                        # print(sub_path,file)
                         continue
                     signal_length = len(df)
 
                     for start in range(0, signal_length - window_size + 1, step_size):
-                        if np.random.rand() < 0.33:
+                        if np.random.rand() < 0.33 and dir != "transitions_envelope_phase":
                             end = start + window_size // 2
                             segment_X = df.loc[start:end-1,channels]
                             segment_Y = df.loc[end-1,["Exercise_Phase"]]
@@ -81,7 +81,8 @@ for dirpath, dirnames, filenames in os.walk(r"Y:\Datasets\Fyzio"):
                             # plt.plot(segment_X)
                             # plt.show()
                             if np.isnan(segment_X).any():
-                                print(file_name, start, end)
+                                # print(file_name, start, end)
+                                pass
                             else:
                                 data_X[fname].append(segment_X)
                                 data_Y[fname].append(segment_Y)
@@ -94,7 +95,7 @@ for dirpath, dirnames, filenames in os.walk(r"Y:\Datasets\Fyzio"):
                         else:
                             data_X[fname].append(segment_X)
                             data_Y[fname].append(segment_Y)
-                        print(segment_X.shape)
+                        # print(segment_X.shape)
 
 os.makedirs(os.path.join(save_path,save_dir_X),exist_ok=True)
 os.makedirs(os.path.join(save_path,save_dir_Y),exist_ok=True)
