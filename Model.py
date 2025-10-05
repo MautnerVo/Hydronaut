@@ -6,15 +6,13 @@ import numpy as np
 import pickle
 import os
 
-from torch.nn.functional import dropout
-
-
-class Net(nn.Module,dropout = True):
-    def __init__(self, in_channels = 20,seq_len = 200):
+class Net(nn.Module):
+    def __init__(self, in_channels = 20,seq_len = 200,dropout=True):
         super(Net,self).__init__()
         cnn1 = 64
         cnn2 = 128
         cnn3 = 128
+        self.dropout = dropout
         self.cnn1 = nn.Conv1d(in_channels, cnn1, kernel_size=3, padding=1)
         self.normalization1=nn.BatchNorm1d(cnn1)
         self.pool1= nn.MaxPool1d(2)
@@ -56,20 +54,20 @@ class Net(nn.Module,dropout = True):
         x = self.flatten(x)
         x = self.snn1(x)
         x = F.relu(x)
-        if dropout:
+        if self.dropout:
             x = self.dropout1(x)
         x = self.snn2(x)
         x = F.relu(x)
-        if dropout:
+        if self.dropout:
             x = self.dropout2(x)
         out = self.snn3(x)
         return out
 
 
 class ModelInterface:
-    def __init__(self,model_path = r"models/cnn_model_3.pth",dropout = True):
+    def __init__(self,model_path = r"models/cnn_model_3.pth",dropout=True):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.model = Net(dropout).to(device=self.device)
+        self.model = Net(dropout=dropout).to(device=self.device)
         self.model.load_state_dict(torch.load(model_path))
         self.log_mask = [0,5,10,15]
         self.model.eval()
@@ -83,7 +81,6 @@ class ModelInterface:
                             "Triceps_EMG_Envelope", "Triceps_Q1", "Triceps_Q2", "Triceps_Q3", "Triceps_Q4",
                             "Gastrocnemious_EMG_Envelope","Gastrocnemious_Q1","Gastrocnemious_Q2","Gastrocnemious_Q3","Gastrocnemious_Q4",
                             "Rectus_EMG_Envelope","Rectus_Q1","Rectus_Q2","Rectus_Q3","Rectus_Q4" v tomto poradi
-        :dropout: True | False starší verze modelu používají dropout
         :return: vraci predikci fáze
         """
 
@@ -113,16 +110,16 @@ if __name__ == "__main__":
     import time
     path = r"Y:\Datasets\Fyzio"
     exercise = "Wide squat"
-    with open(os.path.join(path, "X_train", exercise + ".pkl"), "rb") as f:
+    with open(os.path.join(path, "X_train_w_augmentation", exercise + ".pkl"), "rb") as f:
         x = np.array(pickle.load(f))
         print(x.shape)
 
-    with open(os.path.join(path, "Y_train", exercise + ".pkl"), "rb") as f:
+    with open(os.path.join(path, "Y_train_w_augmentation", exercise + ".pkl"), "rb") as f:
         y = np.array(pickle.load(f))
 
     start = time.time()
-    model = ModelInterface()
-    for i in range(100):
+    model = ModelInterface(model_path=r"models/cnn_model_augmentation_3.pth",dropout=False)
+    for i in range(1000):
         output = model.predict(x[i])
         print(output, y[i], np.abs(output-y[i]))
     time_end = time.time()
