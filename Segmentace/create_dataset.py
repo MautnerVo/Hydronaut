@@ -43,12 +43,25 @@ validation_X = []
 validation_Y = []
 data_Y = {key: [] for key in data_X}
 
+dataset_type = "Reg"
+
+
 path = r"Y:\Datasets\Fyzio\signals_envelope_phase"
 save_path = r"Y:\Datasets\Fyzio"
 save_dir_X = "X_train_w_augmentation"
-save_dir_Y = "Y_train_w_augmentation"
+save_dir_Y = f"Y_{dataset_type}_train_w_augmentation"
 fname = "Wide squat"
+
+def GetClassY(pathY,exercise):
+    try:
+        df = pd.read_csv(os.path.join(pathY, exercise + ".csv"))
+        seg_Y = df["squat_depth"]
+        return seg_Y.values[0]
+    except:
+        return None
+
 for dirpath, dirnames, filenames in os.walk(r"Y:\Datasets\Fyzio"):
+    print(dirpath)
     for dir in dirnames:
         if dir == "signals_envelope_phase" or dir == "transitions_envelope_phase":
             sub_path = os.path.join(dirpath,dir)
@@ -63,12 +76,16 @@ for dirpath, dirnames, filenames in os.walk(r"Y:\Datasets\Fyzio"):
                         # print(sub_path,file)
                         continue
                     signal_length = len(df)
-
+                    if dataset_type == "Class" and dir != "transitions_envelope_phase":
+                        segment_Y = GetClassY(os.path.join(dirpath, "exercises"), "Wide squat")
+                        if segment_Y is None:
+                            continue
                     for start in range(0, signal_length - window_size + 1, step_size):
                         if np.random.rand() < 0.33 and dir != "transitions_envelope_phase":
                             end = start + window_size // 2
                             segment_X = df.loc[start:end-1,channels]
-                            segment_Y = df.loc[end-1,["Exercise_Phase"]]
+                            if dataset_type == "Reg":
+                                segment_Y = df.loc[end-1,["Exercise_Phase"]]
                             segment_x_interp = []
                             for channel in segment_X.T.values:
                                 def_length = len(channel)
@@ -89,7 +106,8 @@ for dirpath, dirnames, filenames in os.walk(r"Y:\Datasets\Fyzio"):
 
                         end = start + window_size
                         segment_X = df.loc[start:end-1,channels].to_numpy()
-                        segment_Y = df.loc[end-1,["Exercise_Phase"]]
+                        if dataset_type == "Reg":
+                            segment_Y = df.loc[end - 1, ["Exercise_Phase"]]
                         if np.isnan(segment_X).any():
                             print(file_name,start,end)
                         else:
