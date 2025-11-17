@@ -20,6 +20,8 @@ channels = [
     "Rectus_EMG_Envelope","Rectus_Q1","Rectus_Q2","Rectus_Q3","Rectus_Q4"
 ]
 
+y_channels = ["squat_depth","head_axis","feet"]
+
 # channels = [
 #      "Biceps_Q1", "Biceps_Q2", "Biceps_Q3", "Biceps_Q4",
 #      "Triceps_Q1", "Triceps_Q2", "Triceps_Q3", "Triceps_Q4",
@@ -43,19 +45,20 @@ validation_X = []
 validation_Y = []
 data_Y = {key: [] for key in data_X}
 
-dataset_type = "Reg"
+dataset_type = "Class"
 
 
 path = r"Y:\Datasets\Fyzio\signals_envelope_phase"
 save_path = r"Y:\Datasets\Fyzio"
-save_dir_X = "X_train_w_augmentation"
+save_dir_X = f"X_{dataset_type}_train_w_augmentation"
 save_dir_Y = f"Y_{dataset_type}_train_w_augmentation"
 fname = "Wide squat"
 
 def GetClassY(pathY,exercise):
     try:
         df = pd.read_csv(os.path.join(pathY, exercise + ".csv"))
-        seg_Y = df["squat_depth"]
+        seg_Y = df[y_channels]
+        print(seg_Y.values[0])
         return seg_Y.values[0]
     except:
         return None
@@ -63,12 +66,12 @@ def GetClassY(pathY,exercise):
 for dirpath, dirnames, filenames in os.walk(r"Y:\Datasets\Fyzio"):
     print(dirpath)
     for dir in dirnames:
-        if dir == "signals_envelope_phase" or dir == "transitions_envelope_phase":
+        if dir == "signals_envelope_phase" or (dir == "transitions_envelope_phase" and dataset_type == "Reg"):
             sub_path = os.path.join(dirpath,dir)
             for file in os.listdir(sub_path):
                 file_name = os.path.splitext(file)[0]
                 if file_name in data_X or dir == "transitions_envelope_phase":
-                    step_size = 25 if dir == "transitions_envelope_phase" else 5
+                    step_size = 100 if (dir == "transitions_envelope_phase" or dataset_type == "Class") else 5
                     try:
                         df = pd.read_csv(os.path.join(sub_path,file))
                     except Exception as e:
@@ -79,9 +82,10 @@ for dirpath, dirnames, filenames in os.walk(r"Y:\Datasets\Fyzio"):
                     if dataset_type == "Class" and dir != "transitions_envelope_phase":
                         segment_Y = GetClassY(os.path.join(dirpath, "exercises"), "Wide squat")
                         if segment_Y is None:
+                            print("Error reading exercise phase:")
                             continue
                     for start in range(0, signal_length - window_size + 1, step_size):
-                        if np.random.rand() < 0.33 and dir != "transitions_envelope_phase":
+                        if np.random.rand() < 0.5 and (dir != "transitions_envelope_phase" and dataset_type == "Reg"):
                             end = start + window_size // 2
                             segment_X = df.loc[start:end-1,channels]
                             if dataset_type == "Reg":
@@ -120,6 +124,9 @@ os.makedirs(os.path.join(save_path,save_dir_Y),exist_ok=True)
 
 x = np.array(data_X[fname].copy())
 x = x.reshape(-1,20)
+
+print(len(data_X["Wide squat"]))
+print(len(data_Y["Wide squat"]))
 
 df = pd.DataFrame(x)
 df.to_csv("X.csv",index=False)
